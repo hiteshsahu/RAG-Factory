@@ -45,7 +45,7 @@ store = [
 retrieve = []
 
 # Stage 5 — The Better-Find-Inator
-rerank = []
+rerank = ["requests>=2.31"]
 
 # Stage 6 — The Answer-Inator
 generate = []
@@ -119,4 +119,9 @@ ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["ragfactory"]
-addopts = "-v --tb=short"
+# Several stages have provider files with the same basename (e.g. mistral.py
+# under both embed/ and rerank/), and none of the tests/ dirs are packages
+# (no __init__.py). importlib mode keys imports by full path instead of a
+# global bare module name, so same-named test files across stages don't clash.
+addopts = "-v --tb=short --import-mode=importlib"
+consider_namespace_packages = true
