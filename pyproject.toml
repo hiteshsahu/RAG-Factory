@@ -1,0 +1,82 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ragfactory"
+version = "0.1.0"
+description = "RAG Factory -- meta-package for installing RAG-Factory stage packages together"
+requires-python = ">=3.12"
+license = { text = "Apache-2.0" }
+dependencies = []
+
+[project.optional-dependencies]
+
+# Shared interfaces (Ingestor, Chunker, Embedder, ...) every stage depends on
+core = ["ragfactory-core"]
+
+# Stage 0 — The Suck-Inator
+ingest = ["ragfactory-ingest"]
+
+# Stage 1 — The Chunk-Inator
+chunk = ["ragfactory-chunk"]
+
+# Stage 2 — The Embed-Inator
+embed = ["ragfactory-embed"]
+
+# Stage 3 — The Store-Inator
+store = ["ragfactory-store"]
+
+# Stage 4 — The Find-Inator
+retrieve = ["ragfactory-retrieve"]
+
+# Stage 5 — The Better-Find-Inator
+rerank = ["ragfactory-rerank"]
+
+# Stage 6 — The Answer-Inator
+generate = ["ragfactory-generate"]
+
+# Stage 7 — The Evaluate-Inator
+evaluate = ["ragfactory-evaluate"]
+
+# Stage 8 — The Observe-Inator
+observe = ["ragfactory-observe"]
+
+# Orchestrator that wires all 9 stages together
+pipeline = ["ragfactory-pipeline"]
+
+# Install every stage + the orchestrator
+all = [
+    "ragfactory[core,ingest,chunk,embed,store,retrieve,rerank,generate,evaluate,observe,pipeline]",
+]
+
+# Dev / CI
+dev = [
+    "ragfactory[all]",
+    "pytest>=8.0.0",
+    "ruff>=0.4.0",
+    "mypy>=1.9.0",
+]
+
+# This meta-package has no source of its own — it only aggregates the
+# packages/ projects above as installable extras.
+[tool.setuptools]
+packages = []
+
+# ── Workspace-level tooling (lints/tests every package/ at once) ──────────────
+[tool.ruff]
+src = ["packages"]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["packages"]
+addopts = "-v --tb=short"
