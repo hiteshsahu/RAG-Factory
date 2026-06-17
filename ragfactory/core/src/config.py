@@ -9,6 +9,9 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="RAGFACTORY_", env_file=".env", extra="ignore")
 
     openai_api_key: str | None = None
+    mistral_api_key: str | None = None
+    huggingface_api_key: str | None = None
+    ollama_base_url: str = "http://localhost:11434"
     github_token: str | None = None
     chunk_size: int = 200
     chunk_overlap: int = 50

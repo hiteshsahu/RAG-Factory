@@ -29,7 +29,7 @@ ingest = [
 chunk = []
 
 # Stage 2 — The Embed-Inator
-embed = ["numpy>=1.26.0"]
+embed = ["numpy>=1.26.0", "requests>=2.31"]
 
 # Stage 3 — The Store-Inator (numpy fallback; native ext built separately via ./go build_native)
 store = ["numpy>=1.26.0"]
