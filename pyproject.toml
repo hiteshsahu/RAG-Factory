@@ -29,10 +29,17 @@ ingest = [
 chunk = []
 
 # Stage 2 — The Embed-Inator
-embed = ["numpy>=1.26.0", "requests>=2.31"]
+embed = [
+    "numpy>=1.26.0",
+    "requests>=2.31"]
 
 # Stage 3 — The Store-Inator (numpy fallback; native ext built separately via ./go build_native)
-store = ["numpy>=1.26.0"]
+store = [
+    "numpy>=1.26.0",
+    "chromadb>=0.5",
+    "psycopg[binary]>=3.1",
+    "pinecone>=5.0",
+]
 
 # Stage 4 — The Find-Inator
 retrieve = []

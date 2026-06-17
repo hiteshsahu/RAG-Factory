@@ -1,3 +1,6 @@
+from .chroma import ChromaVectorStore
+from .pgvector import PgVectorStore
+from .pinecone import PineconeVectorStore
 from .vector_store import InMemoryVectorStore
 
-__all__ = ["InMemoryVectorStore"]
+__all__ = ["ChromaVectorStore", "InMemoryVectorStore", "PgVectorStore", "PineconeVectorStore"]
