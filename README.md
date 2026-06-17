@@ -4,19 +4,22 @@
 
 ### Powered by the **Raginator-3000**
 
-*"Behold! The RAGINATOR!
-Point it at ANY data source and it shall
-**RAG-ify** everything in the tri-state area!"*
-— Dr. Doofenshmirtz, probably
-
-![Raginator-3000](./img/cover.png)
-
 ```python
             ┌─────────────────────────────────────┐
             │  RAGINATOR — TRI-STATE RAG MACHINE  │
             │  Patent Pending — Doofenshmirtz Inc │
             └─────────────────────────────────────┘
+
+            "Behold! The RAGINATOR!"
+             Point it at ANY data source and it shall RAG-ify everything in the tri-state area!
+                                                                    — Dr. Doofenshmirtz, probably
 ```
+
+
+
+![Raginator-3000](./img/cover.png)
+
+
 ![Python](https://img.shields.io/badge/Python-3.12+-blue)
 ![CUDA](https://img.shields.io/badge/CUDA-Enabled-76B900)
 ![TensorFlow](https://img.shields.io/badge/TensorFlow-FF6F00)
@@ -25,6 +28,12 @@ Point it at ANY data source and it shall
 
 
 ## RAG PIPELINE
+
+
+
+![](./img/pipeline.jpeg)
+
+### Stages
 
 | Stage | Normal Name   | Raginator Name             | Job                                              |
 |-------|---------------|----------------------------|--------------------------------------------------|
@@ -36,10 +45,7 @@ Point it at ANY data source and it shall
 | 5     | Rerank        | **The Better-Find-Inator** | Decides which context is actually useful.        |
 | 6     | Generate      | **The Answer-Inator**      | Generates a response.                            |
 | 7     | Evaluate      | **The Evaluate-Inator**    | judges its own work.                             |
-| 8     | Observe       | **The Watch-Inator**       | Monitors the entire operation from headquarters. |
-
-![](./img/pipeline.jpeg)
-
+| 8     | Observe       | **The Observe-Inator**     | Monitors the entire operation from headquarters. |
 
 
 
