@@ -48,7 +48,7 @@ retrieve = []
 rerank = ["requests>=2.31"]
 
 # Stage 6 — The Answer-Inator
-generate = []
+generate = ["requests>=2.31"]
 
 # Stage 7 — The Evaluate-Inator
 evaluate = []
