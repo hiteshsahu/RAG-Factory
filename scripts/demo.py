@@ -37,7 +37,9 @@ def main() -> None:
         )
 
         print(f"indexed {pipeline.index()} chunks")
-        print(pipeline.query(QUESTION))
+        answer = pipeline.query(QUESTION)
+        print(answer.answer)
+        print(f"\n({len(answer.sources)} source(s))")
 
 
 if __name__ == "__main__":

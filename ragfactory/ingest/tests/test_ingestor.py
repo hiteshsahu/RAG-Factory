@@ -10,4 +10,5 @@ def test_ingest_reads_all_text_files(tmp_path: Path):
 
     documents = list(TextFileIngestor(tmp_path).ingest())
 
-    assert documents == ["first", "second"]
+    assert [doc.content for doc in documents] == ["first", "second"]
+    assert documents[0].source_id == str(tmp_path / "a.txt")

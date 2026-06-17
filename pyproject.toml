@@ -8,7 +8,9 @@ version = "0.1.0"
 description = "RAG Factory -- modular pipeline for turning documents into trusted answers"
 requires-python = ">=3.12"
 license = { text = "Apache-2.0" }
-dependencies = []
+dependencies = [
+    "pydantic-settings>=2.0",
+]
 
 [project.optional-dependencies]
 
@@ -16,7 +18,12 @@ dependencies = []
 core = []
 
 # Stage 0 — The Suck-Inator
-ingest = []
+ingest = [
+    "pypdf>=4.0",
+    "requests>=2.31",
+    "beautifulsoup4>=4.12",
+    "boto3>=1.34",
+]
 
 # Stage 1 — The Chunk-Inator
 chunk = []
@@ -56,6 +63,7 @@ dev = [
     "pytest>=8.0.0",
     "ruff>=0.4.0",
     "mypy>=1.9.0",
+    "reportlab>=4.0",  # generates a real PDF fixture for test_pdf.py
 ]
 
 # One distribution, code organized by stage under ragfactory/<stage>/src/ --

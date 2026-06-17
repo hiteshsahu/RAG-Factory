@@ -38,4 +38,5 @@ def test_end_to_end_index_and_query(tmp_path: Path):
     assert chunk_count > 0
 
     answer = pipeline.query("What does the Raginator do?")
-    assert "Raginator" in answer
+    assert "Raginator" in answer.answer
+    assert answer.sources

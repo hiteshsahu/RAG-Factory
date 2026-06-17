@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ragfactory.core import Embedder, Retriever, VectorStore
+from ragfactory.core import Embedder, RetrievedChunk, Retriever, VectorStore
 
 
 class TopKRetriever(Retriever):
@@ -10,6 +10,6 @@ class TopKRetriever(Retriever):
         self._embedder = embedder
         self._store = store
 
-    def retrieve(self, query: str, top_k: int = 5) -> list[tuple[str, float]]:
-        [query_vector] = self._embedder.embed([query])
-        return self._store.search(query_vector, top_k=top_k)
+    def retrieve(self, query: str, top_k: int = 5) -> list[RetrievedChunk]:
+        [query_embedding] = self._embedder.embed_texts([query])
+        return self._store.search(query_embedding, top_k=top_k)

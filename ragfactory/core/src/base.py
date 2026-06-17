@@ -4,43 +4,59 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from typing import Any
 
+from .types import Chunk, EmbeddedChunk, GeneratedAnswer, RawDocument, RetrievedChunk
+
 
 class Ingestor(ABC):
-    """Stage 0 — pulls raw documents from a source into plain text."""
+    """Stage 0 — pulls raw documents from a source."""
 
     @abstractmethod
-    def ingest(self) -> Iterable[str]: ...
+    def ingest(self) -> Iterable[RawDocument]: ...
 
 
 class Chunker(ABC):
     """Stage 1 — splits a document into retrievable chunks."""
 
     @abstractmethod
-    def chunk(self, text: str) -> list[str]: ...
+    def chunk(self, document: RawDocument) -> list[Chunk]: ...
 
 
 class Embedder(ABC):
-    """Stage 2 — converts chunks into vector embeddings."""
+    """Stage 2 — converts text into vector embeddings."""
+
+    provider_name: str = "unknown"
 
     @abstractmethod
-    def embed(self, texts: list[str]) -> list[Any]: ...
+    def embed_texts(self, texts: list[str]) -> list[list[float]]: ...
+
+    def embed_chunks(self, chunks: list[Chunk]) -> list[EmbeddedChunk]:
+        """Convenience wrapper used by the indexing flow (Stage 2 -> Stage 3).
+
+        Query embedding (Stage 4) calls embed_texts directly instead, since a
+        query string isn't a document Chunk.
+        """
+        vectors = self.embed_texts([chunk.content for chunk in chunks])
+        return [
+            EmbeddedChunk(chunk=chunk, embedding=vector, provider=self.provider_name)
+            for chunk, vector in zip(chunks, vectors, strict=True)
+        ]
 
 
 class VectorStore(ABC):
-    """Stage 3 — persists embeddings for later similarity search."""
+    """Stage 3 — persists embedded chunks for later similarity search."""
 
     @abstractmethod
-    def add(self, doc_id: str, vector: Any) -> None: ...
+    def add(self, embedded_chunk: EmbeddedChunk) -> None: ...
 
     @abstractmethod
-    def search(self, query: Any, top_k: int) -> list[tuple[str, float]]: ...
+    def search(self, query_embedding: list[float], top_k: int) -> list[RetrievedChunk]: ...
 
 
 class Retriever(ABC):
-    """Stage 4 — finds candidate chunk ids relevant to a query."""
+    """Stage 4 — finds candidate chunks relevant to a query."""
 
     @abstractmethod
-    def retrieve(self, query: str, top_k: int) -> list[tuple[str, float]]: ...
+    def retrieve(self, query: str, top_k: int) -> list[RetrievedChunk]: ...
 
 
 class Reranker(ABC):
@@ -48,22 +64,24 @@ class Reranker(ABC):
 
     @abstractmethod
     def rerank(
-        self, query: str, candidates: list[tuple[str, float]]
-    ) -> list[tuple[str, float]]: ...
+        self, query: str, candidates: list[RetrievedChunk]
+    ) -> list[RetrievedChunk]: ...
 
 
 class Generator(ABC):
     """Stage 6 — produces a final answer from a query and its context."""
 
     @abstractmethod
-    def generate(self, query: str, context: list[str]) -> str: ...
+    def generate(self, query: str, context: list[RetrievedChunk]) -> GeneratedAnswer: ...
 
 
 class Evaluator(ABC):
     """Stage 7 — scores the quality of a generated answer."""
 
     @abstractmethod
-    def evaluate(self, query: str, answer: str, context: list[str]) -> float: ...
+    def evaluate(
+        self, query: str, answer: GeneratedAnswer, context: list[RetrievedChunk]
+    ) -> float: ...
 
 
 class Observer(ABC):

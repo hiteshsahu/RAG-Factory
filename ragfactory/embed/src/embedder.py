@@ -14,11 +14,13 @@ class HashingEmbedder(Embedder):
     a model-backed Embedder for production use.
     """
 
+    provider_name = "hashing"
+
     def __init__(self, dim: int = 256) -> None:
         self._dim = dim
 
-    def embed(self, texts: list[str]) -> list[np.ndarray]:
-        return [self._embed_one(text) for text in texts]
+    def embed_texts(self, texts: list[str]) -> list[list[float]]:
+        return [self._embed_one(text).tolist() for text in texts]
 
     def _embed_one(self, text: str) -> np.ndarray:
         vector = np.zeros(self._dim, dtype=np.float32)

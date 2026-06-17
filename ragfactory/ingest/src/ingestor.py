@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from pathlib import Path
 
-from ragfactory.core import Ingestor
+from ragfactory.core import Ingestor, RawDocument
 
 
 class TextFileIngestor(Ingestor):
@@ -12,6 +12,10 @@ class TextFileIngestor(Ingestor):
     def __init__(self, source_dir: str | Path) -> None:
         self._source_dir = Path(source_dir)
 
-    def ingest(self) -> Iterable[str]:
+    def ingest(self) -> Iterable[RawDocument]:
         for path in sorted(self._source_dir.glob("*.txt")):
-            yield path.read_text(encoding="utf-8")
+            yield RawDocument(
+                content=path.read_text(encoding="utf-8"),
+                metadata={"path": str(path)},
+                source_id=str(path),
+            )

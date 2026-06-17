@@ -4,6 +4,7 @@ from ragfactory.core import (
     Chunker,
     Embedder,
     Evaluator,
+    GeneratedAnswer,
     Generator,
     Ingestor,
     Observer,
@@ -38,28 +39,23 @@ class Pipeline:
         self._generator = generator
         self._evaluator = evaluator
         self._observer = observer
-        self._texts: dict[str, str] = {}
 
     def index(self) -> int:
         """Ingest, chunk, embed, and store all documents. Returns the chunk count."""
         count = 0
-        for doc_id, document in enumerate(self._ingestor.ingest()):
+        for document in self._ingestor.ingest():
             chunks = self._chunker.chunk(document)
-            vectors = self._embedder.embed(chunks)
-            for i, (chunk, vector) in enumerate(zip(chunks, vectors, strict=True)):
-                chunk_id = f"{doc_id}-{i}"
-                self._store.add(chunk_id, vector)
-                self._texts[chunk_id] = chunk
+            for embedded_chunk in self._embedder.embed_chunks(chunks):
+                self._store.add(embedded_chunk)
                 count += 1
         self._observer.record("indexed", chunk_count=count)
         return count
 
-    def query(self, question: str, top_k: int = 5) -> str:
+    def query(self, question: str, top_k: int = 5) -> GeneratedAnswer:
         """Retrieve, rerank, generate, and evaluate an answer for a question."""
         candidates = self._retriever.retrieve(question, top_k=top_k)
         reranked = self._reranker.rerank(question, candidates)
-        context = [self._texts[doc_id] for doc_id, _ in reranked]
-        answer = self._generator.generate(question, context)
-        score = self._evaluator.evaluate(question, answer, context)
+        answer = self._generator.generate(question, reranked)
+        score = self._evaluator.evaluate(question, answer, reranked)
         self._observer.record("query", question=question, score=score)
         return answer

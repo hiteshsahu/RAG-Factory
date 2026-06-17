@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
-from ragfactory.core import VectorStore
+from ragfactory.core import EmbeddedChunk, RetrievedChunk, VectorStore
 
 try:
     import ragfactory_native as _native
@@ -24,20 +24,27 @@ def _cosine_similarity_batch(query: np.ndarray, candidates: np.ndarray) -> np.nd
 
 
 class InMemoryVectorStore(VectorStore):
-    """Holds embeddings in memory; scores via the native extension when available (The Store-Inator)."""
+    """Holds embedded chunks in memory; scores via the native extension when available (The Store-Inator)."""
 
     def __init__(self) -> None:
-        self._ids: list[str] = []
+        self._embedded_chunks: list[EmbeddedChunk] = []
         self._vectors: list[np.ndarray] = []
 
-    def add(self, doc_id: str, vector: np.ndarray) -> None:
-        self._ids.append(doc_id)
-        self._vectors.append(np.asarray(vector, dtype=np.float32))
+    def add(self, embedded_chunk: EmbeddedChunk) -> None:
+        self._embedded_chunks.append(embedded_chunk)
+        self._vectors.append(np.asarray(embedded_chunk.embedding, dtype=np.float32))
 
-    def search(self, query: np.ndarray, top_k: int = 5) -> list[tuple[str, float]]:
+    def search(self, query_embedding: list[float], top_k: int = 5) -> list[RetrievedChunk]:
         if not self._vectors:
             return []
         candidates = np.stack(self._vectors)
-        scores = _cosine_similarity_batch(np.asarray(query, dtype=np.float32), candidates)
-        ranked = sorted(zip(self._ids, scores, strict=True), key=lambda pair: pair[1], reverse=True)
-        return [(doc_id, float(score)) for doc_id, score in ranked[:top_k]]
+        scores = _cosine_similarity_batch(np.asarray(query_embedding, dtype=np.float32), candidates)
+        ranked = sorted(
+            zip(self._embedded_chunks, scores, strict=True),
+            key=lambda pair: pair[1],
+            reverse=True,
+        )
+        return [
+            RetrievedChunk(chunk=embedded.chunk, score=float(score), rank=rank)
+            for rank, (embedded, score) in enumerate(ranked[:top_k])
+        ]

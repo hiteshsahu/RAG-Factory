@@ -87,12 +87,6 @@ gating that stage's third-party deps (e.g. `embed`/`store` need numpy) — all
 the code always ships together, organized by folder for readability and so a
 team can own a stage's `ragfactory/<stage>/` folder day to day.
 
-> **Gotcha:** always invoke `pytest`/`ruff`/`mypy` as console scripts (as
-> `./go` does), never as `python -m pytest` from the repo root. `python -m`
-> always prepends the current directory to `sys.path`, and since this repo's
-> top-level folder is itself named `ragfactory` — same as the import
-> namespace — that shadows the editable-install lookup for `ragfactory.<stage>`
-> and breaks imports.
 
 ---
 

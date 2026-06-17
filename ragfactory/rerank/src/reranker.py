@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ragfactory.core import Reranker
+from ragfactory.core import Reranker, RetrievedChunk
 
 
 class IdentityReranker(Reranker):
@@ -10,6 +10,6 @@ class IdentityReranker(Reranker):
     """
 
     def rerank(
-        self, query: str, candidates: list[tuple[str, float]]
-    ) -> list[tuple[str, float]]:
+        self, query: str, candidates: list[RetrievedChunk]
+    ) -> list[RetrievedChunk]:
         return candidates
