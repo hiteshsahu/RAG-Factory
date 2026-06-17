@@ -11,7 +11,7 @@ from ragfactory.ingest import TextFileIngestor
 from ragfactory.observe import LoggingObserver
 from ragfactory.pipeline import Pipeline
 from ragfactory.rerank import IdentityReranker
-from ragfactory.retrieve import TopKRetriever
+from ragfactory.retrieve import DenseRetriever
 from ragfactory.store import InMemoryVectorStore
 
 SAMPLE_TEXT = "Behold the RAGINATOR! It RAG-ifies everything in the tri-state area."
@@ -29,7 +29,7 @@ def main() -> None:
             chunker=FixedSizeChunker(chunk_size=10, overlap=2),
             embedder=embedder,
             store=store,
-            retriever=TopKRetriever(embedder, store),
+            retriever=DenseRetriever(embedder, store),
             reranker=IdentityReranker(),
             generator=TemplateGenerator(),
             evaluator=KeywordOverlapEvaluator(),

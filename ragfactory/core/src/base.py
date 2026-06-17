@@ -55,6 +55,15 @@ class VectorStore(ABC):
 class Retriever(ABC):
     """Stage 4 — finds candidate chunks relevant to a query."""
 
+    def index(self, chunks: list[Chunk]) -> None:
+        """Optional hook called by Pipeline.index() for every batch of chunks.
+
+        Default no-op: retrievers backed by a VectorStore (e.g. dense) get
+        their data that way instead. Retrievers that need their own corpus
+        (e.g. sparse/BM25) override this to build it incrementally.
+        """
+        return None
+
     @abstractmethod
     def retrieve(self, query: str, top_k: int) -> list[RetrievedChunk]: ...
 

@@ -1,5 +1,5 @@
 from ragfactory.core import Chunk, Embedder, RetrievedChunk, VectorStore
-from ragfactory.retrieve import TopKRetriever
+from ragfactory.retrieve import DenseRetriever
 
 
 class FakeEmbedder(Embedder):
@@ -22,7 +22,7 @@ class FakeStore(VectorStore):
 
 def test_retrieve_embeds_query_then_searches_store():
     store = FakeStore()
-    retriever = TopKRetriever(FakeEmbedder(), store)
+    retriever = DenseRetriever(FakeEmbedder(), store)
 
     results = retriever.retrieve("hello", top_k=3)
 

@@ -45,6 +45,7 @@ class Pipeline:
         count = 0
         for document in self._ingestor.ingest():
             chunks = self._chunker.chunk(document)
+            self._retriever.index(chunks)
             for embedded_chunk in self._embedder.embed_chunks(chunks):
                 self._store.add(embedded_chunk)
                 count += 1

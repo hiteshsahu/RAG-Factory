@@ -3,8 +3,8 @@ from __future__ import annotations
 from ragfactory.core import Embedder, RetrievedChunk, Retriever, VectorStore
 
 
-class TopKRetriever(Retriever):
-    """Embeds the query and looks up the closest vectors in the store (The Find-Inator)."""
+class DenseRetriever(Retriever):
+    """Embeds the query and looks up the closest vectors in the store (The Find-Inator, dense mode)."""
 
     def __init__(self, embedder: Embedder, store: VectorStore) -> None:
         self._embedder = embedder
