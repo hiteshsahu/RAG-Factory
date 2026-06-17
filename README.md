@@ -15,10 +15,7 @@
                                                                     — Dr. Doofenshmirtz, probably
 ```
 
-
-
 ![Raginator-3000](./img/cover.png)
-
 
 ![Python](https://img.shields.io/badge/Python-3.12+-blue)
 ![CUDA](https://img.shields.io/badge/CUDA-Enabled-76B900)
@@ -26,10 +23,7 @@
 ![C++17](https://img.shields.io/badge/C++-17-blue)
 ![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)
 
-
 ## RAG PIPELINE
-
-
 
 ![](./img/pipeline.jpeg)
 
