@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "ragfactory"
 version = "0.1.0"
-description = "RAG Factory -- meta-package for installing RAG-Factory stage packages together"
+description = "RAG Factory -- modular pipeline for turning documents into trusted answers"
 requires-python = ">=3.12"
 license = { text = "Apache-2.0" }
 dependencies = []
@@ -13,37 +13,37 @@ dependencies = []
 [project.optional-dependencies]
 
 # Shared interfaces (Ingestor, Chunker, Embedder, ...) every stage depends on
-core = ["ragfactory-core"]
+core = []
 
 # Stage 0 — The Suck-Inator
-ingest = ["ragfactory-ingest"]
+ingest = []
 
 # Stage 1 — The Chunk-Inator
-chunk = ["ragfactory-chunk"]
+chunk = []
 
 # Stage 2 — The Embed-Inator
-embed = ["ragfactory-embed"]
+embed = ["numpy>=1.26.0"]
 
-# Stage 3 — The Store-Inator
-store = ["ragfactory-store"]
+# Stage 3 — The Store-Inator (numpy fallback; native ext built separately via ./go build_native)
+store = ["numpy>=1.26.0"]
 
 # Stage 4 — The Find-Inator
-retrieve = ["ragfactory-retrieve"]
+retrieve = []
 
 # Stage 5 — The Better-Find-Inator
-rerank = ["ragfactory-rerank"]
+rerank = []
 
 # Stage 6 — The Answer-Inator
-generate = ["ragfactory-generate"]
+generate = []
 
 # Stage 7 — The Evaluate-Inator
-evaluate = ["ragfactory-evaluate"]
+evaluate = []
 
 # Stage 8 — The Observe-Inator
-observe = ["ragfactory-observe"]
+observe = []
 
 # Orchestrator that wires all 9 stages together
-pipeline = ["ragfactory-pipeline"]
+pipeline = []
 
 # Install every stage + the orchestrator
 all = [
@@ -58,14 +58,39 @@ dev = [
     "mypy>=1.9.0",
 ]
 
-# This meta-package has no source of its own — it only aggregates the
-# packages/ projects above as installable extras.
+# One distribution, code organized by stage under ragfactory/<stage>/src/ --
+# map each dotted subpackage to its stage folder's flat src/ (no redundant
+# nested ragfactory/<stage>/ folder inside it).
 [tool.setuptools]
-packages = []
+packages = [
+    "ragfactory.core",
+    "ragfactory.ingest",
+    "ragfactory.chunk",
+    "ragfactory.embed",
+    "ragfactory.store",
+    "ragfactory.retrieve",
+    "ragfactory.rerank",
+    "ragfactory.generate",
+    "ragfactory.evaluate",
+    "ragfactory.observe",
+    "ragfactory.pipeline",
+]
 
-# ── Workspace-level tooling (lints/tests every package/ at once) ──────────────
+[tool.setuptools.package-dir]
+"ragfactory.core" = "ragfactory/core/src"
+"ragfactory.ingest" = "ragfactory/ingest/src"
+"ragfactory.chunk" = "ragfactory/chunk/src"
+"ragfactory.embed" = "ragfactory/embed/src"
+"ragfactory.store" = "ragfactory/store/src"
+"ragfactory.retrieve" = "ragfactory/retrieve/src"
+"ragfactory.rerank" = "ragfactory/rerank/src"
+"ragfactory.generate" = "ragfactory/generate/src"
+"ragfactory.evaluate" = "ragfactory/evaluate/src"
+"ragfactory.observe" = "ragfactory/observe/src"
+"ragfactory.pipeline" = "ragfactory/pipeline/src"
+
 [tool.ruff]
-src = ["packages"]
+src = ["ragfactory"]
 line-length = 100
 target-version = "py312"
 
@@ -78,5 +103,5 @@ python_version = "3.12"
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
-testpaths = ["packages"]
+testpaths = ["ragfactory"]
 addopts = "-v --tb=short"

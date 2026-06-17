@@ -49,21 +49,25 @@
 
 ```text
 RAG-Factory/
-├── packages/                    # one independently installable project per stage
-│   ├── core/                    # ragfactory-core — shared abstract interfaces
-│   │   └── src/ragfactory/core/base.py
-│   ├── ingest/                  # ragfactory-ingest    — Stage 0, The Suck-Inator
-│   ├── chunk/                   # ragfactory-chunk     — Stage 1, The Chunk-Inator
-│   ├── embed/                   # ragfactory-embed     — Stage 2, The Embed-Inator
-│   ├── store/                   # ragfactory-store     — Stage 3, The Store-Inator
-│   ├── retrieve/                # ragfactory-retrieve  — Stage 4, The Find-Inator
-│   ├── rerank/                  # ragfactory-rerank    — Stage 5, The Better-Find-Inator
-│   ├── generate/                # ragfactory-generate  — Stage 6, The Answer-Inator
-│   ├── evaluate/                # ragfactory-evaluate  — Stage 7, The Evaluate-Inator
-│   ├── observe/                 # ragfactory-observe   — Stage 8, The Observe-Inator
-│   └── pipeline/                # ragfactory-pipeline  — orchestrator wiring all 9 stages
-│       (each package/<stage>/ has its own pyproject.toml, deps, ruff/mypy/pytest
-│        config, src/ragfactory/<stage>/, and tests/ — ownable by a different team)
+├── ragfactory/                  # the ragfactory package, organized one folder per stage
+│   ├── core/                    # shared abstract interfaces
+│   │   └── src/base.py          # __init__.py + base.py live directly in src/
+│   ├── ingest/                  # Stage 0, The Suck-Inator
+│   ├── chunk/                   # Stage 1, The Chunk-Inator
+│   ├── embed/                   # Stage 2, The Embed-Inator
+│   ├── store/                   # Stage 3, The Store-Inator
+│   ├── retrieve/                # Stage 4, The Find-Inator
+│   ├── rerank/                  # Stage 5, The Better-Find-Inator
+│   ├── generate/                # Stage 6, The Answer-Inator
+│   ├── evaluate/                # Stage 7, The Evaluate-Inator
+│   ├── observe/                 # Stage 8, The Observe-Inator
+│   └── pipeline/                # orchestrator wiring all 9 stages together
+│       (each ragfactory/<stage>/ has a flat src/ — no redundant nested
+│        ragfactory/<stage>/ folder inside it — plus its own tests/. The
+│        single root pyproject.toml maps each dotted import name to its
+│        stage's src/ directly, e.g.:
+│          [tool.setuptools.package-dir]
+│          "ragfactory.chunk" = "ragfactory/chunk/src")
 ├── native/                      # optional C++/CUDA acceleration (own CMake build)
 │   ├── CMakeLists.txt           # USE_CUDA=OFF by default (builds CPU-only)
 │   ├── include/similarity.hpp
@@ -73,15 +77,22 @@ RAG-Factory/
 ├── go                            # CLI entrypoint — ./go install | dev | test | ...
 ├── scripts/demo.py               # toy pipeline run by `./go demo`
 ├── img/
-├── pyproject.toml                # root meta-package: extras + workspace tooling defaults
+├── pyproject.toml                # the one and only project file: deps, extras, ruff/mypy/pytest
 ├── LICENSE
 └── README.md
 ```
 
-All packages share the `ragfactory.*` namespace (PEP 420 namespace packages)
-but ship as separate distributions, each ownable by a different team — e.g.
-`pip install ragfactory-chunk` pulls in only `ragfactory-core` + that stage's
-own deps, not the whole monorepo.
+It's a single distribution (`ragfactory`) with one pip extra per stage, just
+gating that stage's third-party deps (e.g. `embed`/`store` need numpy) — all
+the code always ships together, organized by folder for readability and so a
+team can own a stage's `ragfactory/<stage>/` folder day to day.
+
+> **Gotcha:** always invoke `pytest`/`ruff`/`mypy` as console scripts (as
+> `./go` does), never as `python -m pytest` from the repo root. `python -m`
+> always prepends the current directory to `sys.path`, and since this repo's
+> top-level folder is itself named `ragfactory` — same as the import
+> namespace — that shadows the editable-install lookup for `ragfactory.<stage>`
+> and breaks imports.
 
 ---
 
@@ -90,9 +101,8 @@ own deps, not the whole monorepo.
 ```bash
 ./go                      # interactive command menu
 ./go install_tools        # create .venv, upgrade pip
-./go install              # editable-install every package, core -> stages -> pipeline
-./go install chunk        # editable-install just ragfactory-core + ragfactory-chunk
-
+./go install              # editable-install ragfactory[dev] (every stage + pytest/ruff/mypy)
+./go install chunk        # editable-install just ragfactory[chunk]
 ```
 
 ```bash
@@ -101,9 +111,9 @@ own deps, not the whole monorepo.
 ```
 
 ```bash
-./go test [stage]         # pytest, across everything or one package
-./go lint                 # ruff check across every package
-./go typecheck            # mypy across every package
+./go test [stage]         # pytest, across everything or one stage
+./go lint                 # ruff check
+./go typecheck            # mypy, run per stage (see note below)
 ./go check                # lint + typecheck + test
 ```
 
@@ -112,23 +122,28 @@ own deps, not the whole monorepo.
 ./go clean                # remove .venv, native/build, caches
 ```
 
-Equivalently, the root meta-package exposes the same selection as pip extras:
+Equivalently, the same selection is available as plain pip extras:
 
 ```bash
 pip install -e ".[all]"     # every stage + the orchestrator
-pip install -e ".[chunk]"   # just Stage 1
+pip install -e ".[chunk]"   # just Stage 1's deps (chunk has none beyond core)
 pip install -e ".[dev]"     # all stages + pytest, ruff, mypy
 ```
 
-Each stage also runs and tests independently, e.g. `cd packages/chunk && pytest`.
+Each stage's tests also run independently, e.g. `pytest ragfactory/chunk/tests`.
+
+> **Note:** `./go typecheck` runs mypy once per stage rather than once for
+> the whole tree. Every stage's source dir is named plain `src` (that's the
+> flattening above), and mypy infers a module's dotted name purely from
+> nested `__init__.py` directories on disk — checking them all in one mypy
+> invocation hits "Duplicate module named src". Per-stage invocation avoids
+> that; it's also what made cross-package types resolve correctly (mypy now
+> picks up `ragfactory.core` from the actual installed environment instead
+> of trying to triangulate it from a single package's isolated search path).
 
 The pipeline runs end-to-end with pure-Python/numpy defaults (no GPU, no
-model downloads). 
-
-`./go build_native` builds the optional C++/CUDA extension
-used by `ragfactory-store`; 
-
-if it isn't built, `InMemoryVectorStore`
+model downloads). `./go build_native` builds the optional C++/CUDA extension
+used by the store stage; if it isn't built, `InMemoryVectorStore`
 transparently falls back to a numpy implementation of the same similarity
 scoring.
 

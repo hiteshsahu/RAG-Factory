@@ -9,7 +9,9 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VENV_DIR="$ROOT_DIR/.venv"
 PY="$VENV_DIR/bin/python"
 PIP="$VENV_DIR/bin/pip"
-STAGES=(ingest chunk embed store retrieve rerank generate evaluate observe)
+PYTEST="$VENV_DIR/bin/pytest"
+RUFF="$VENV_DIR/bin/ruff"
+MYPY="$VENV_DIR/bin/mypy"
 
 cd "$ROOT_DIR"
 
@@ -39,8 +41,8 @@ case ${option} in
   0)
     echo "=== 🛠 PREREQUISITES ==="
     echo "⚙️  install_tools     -- Create .venv and upgrade pip"
-    echo "📦  install           -- Editable-install every package (core -> stages -> pipeline)"
-    echo "📦  install <stage>   -- Editable-install one package, e.g. ./go install chunk"
+    echo "📦  install           -- Editable-install ragfactory[dev] (every stage + pytest/ruff/mypy)"
+    echo "📦  install <stage>   -- Editable-install just ragfactory[<stage>], e.g. ./go install chunk"
     ;;
 
   1)
@@ -51,10 +53,10 @@ case ${option} in
 
   2)
     echo "=== 🔎 TESTING AND ANALYSIS ==="
-    echo "🧪  test              -- Run pytest across every package"
-    echo "🧪  test <stage>      -- Run pytest for one package, e.g. ./go test embed"
-    echo "🔎  lint              -- Run ruff check across every package"
-    echo "🔎  typecheck         -- Run mypy across every package"
+    echo "🧪  test              -- Run pytest across the whole codebase"
+    echo "🧪  test <stage>      -- Run pytest for one stage, e.g. ./go test embed"
+    echo "🔎  lint              -- Run ruff check"
+    echo "🔎  typecheck         -- Run mypy"
     echo "✅  check             -- lint + typecheck + test"
     ;;
 
@@ -90,21 +92,13 @@ function install() {
 
   local stage="${1:-}"
   if [ -n "$stage" ]; then
-    log "📦 Installing ragfactory-core (dependency of every stage)..."
-    "$PIP" install -e packages/core
-    if [ "$stage" != "core" ]; then
-      log "📦 Installing ragfactory-$stage..."
-      "$PIP" install -e "packages/$stage"
-    fi
+    log "📦 Installing ragfactory[$stage]..."
+    "$PIP" install -e ".[$stage]"
     return
   fi
 
-  log "📦 Installing every package in dependency order..."
-  "$PIP" install -e packages/core
-  for s in "${STAGES[@]}"; do
-    "$PIP" install -e "packages/$s"
-  done
-  "$PIP" install -e "packages/pipeline[dev]"
+  log "📦 Installing ragfactory[dev] (every stage + pytest/ruff/mypy)..."
+  "$PIP" install -e ".[dev]"
 }
 
 # ---------------------------------------------------------------------------------------
@@ -116,7 +110,6 @@ function demo() {
 }
 
 function dev() {
-  install
   demo
 }
 
@@ -124,25 +117,33 @@ function dev() {
 #  2)                === 🔎 TESTING AND ANALYSIS ===
 # ---------------------------------------------------------------------------------------
 function test() {
+  # Use the pytest console script, not `python -m pytest`: `-m` always
+  # prepends the cwd to sys.path, and our top-level dir is literally named
+  # "ragfactory" -- same as the import namespace -- which then shadows the
+  # editable-install finder for ragfactory.<stage>.
   local stage="${1:-}"
   if [ -n "$stage" ]; then
-    log "🧪 Testing ragfactory-$stage..."
-    (cd "packages/$stage" && "$PY" -m pytest)
+    log "🧪 Testing ragfactory.$stage..."
+    "$PYTEST" "ragfactory/$stage/tests"
     return
   fi
-  log "🧪 Testing every package..."
-  "$PY" -m pytest
+  log "🧪 Testing everything..."
+  "$PYTEST"
 }
 
 function lint() {
-  log "🔎 Linting every package..."
-  "$PY" -m ruff check packages
+  log "🔎 Linting..."
+  "$RUFF" check ragfactory
 }
 
 function typecheck() {
-  log "🔎 Type-checking every package..."
-  for s in core "${STAGES[@]}" pipeline; do
-    (cd "packages/$s" && "$PY" -m mypy src)
+  # Run per stage, not "mypy ragfactory": every stage's source dir is named
+  # plain "src" (flattened, no nested ragfactory/<stage>/ folder), and mypy
+  # infers module names from nested __init__.py directories on disk -- so
+  # checking them all together hits "Duplicate module named src".
+  log "🔎 Type-checking (per stage)..."
+  for s in core ingest chunk embed store retrieve rerank generate evaluate observe pipeline; do
+    (cd "ragfactory/$s" && "$MYPY" src)
   done
 }
 
@@ -162,8 +163,20 @@ function build_native() {
   fi
   log "⚡ Building native extension (USE_CUDA=$cuda_flag)..."
   "$PIP" install -q pybind11 cmake
-  "$VENV_DIR/bin/cmake" -S native -B native/build -DUSE_CUDA="$cuda_flag"
+
+  # find_package(pybind11 CONFIG) doesn't know where pip put it -- point
+  # CMake at pybind11's own packaged cmake config directory explicitly.
+  local pybind11_dir
+  pybind11_dir="$("$PY" -c 'import pybind11; print(pybind11.get_cmake_dir())')"
+  "$VENV_DIR/bin/cmake" -S native -B native/build -DUSE_CUDA="$cuda_flag" -Dpybind11_DIR="$pybind11_dir"
   "$VENV_DIR/bin/cmake" --build native/build
+
+  # native/build isn't on sys.path -- drop the built extension into the
+  # venv's site-packages so ragfactory.store can actually import it.
+  local site_packages
+  site_packages="$("$PY" -c 'import sysconfig; print(sysconfig.get_path("purelib"))')"
+  cp native/build/ragfactory_native*.so "$site_packages/"
+  log "✅ Installed ragfactory_native into $site_packages"
 }
 
 # ---------------------------------------------------------------------------------------
