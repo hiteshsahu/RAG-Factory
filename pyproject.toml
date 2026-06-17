@@ -51,7 +51,7 @@ rerank = ["requests>=2.31"]
 generate = ["requests>=2.31"]
 
 # Stage 7 — The Evaluate-Inator
-evaluate = []
+evaluate = ["requests>=2.31"]
 
 # Stage 8 — The Observe-Inator
 observe = []
