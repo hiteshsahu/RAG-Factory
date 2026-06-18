@@ -1,18 +1,20 @@
 import React, { useEffect, useRef, useState } from 'react'
 import {
   Box, Button, Card, Chip, CircularProgress,
+  Dialog, DialogActions, DialogContent, DialogTitle,
   Grid, IconButton, Paper, Stack, TextField, Tooltip, Typography,
 } from '@mui/material'
 import SendIcon from '@mui/icons-material/Send'
 import ManageSearchIcon from '@mui/icons-material/ManageSearch'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import CheckIcon from '@mui/icons-material/Check'
-import { DEMO_QA, DemoAnswer, formatBytes, type CorpusStats } from '../data'
+import CloseIcon from '@mui/icons-material/Close'
+import { DEMO_QA, DemoAnswer, formatBytes, type CorpusStats, type SourceChunk } from '../data'
 
 interface Message {
   role: 'user' | 'bot'
   text: string
-  sources?: string[]
+  sources?: SourceChunk[]
   ms?: number
   tokens?: number
   cost?: string
@@ -39,6 +41,7 @@ export default function ChatState({ corpusName, stats, onReset }: Props) {
   const [query, setQuery]       = useState('')
   const [thinking, setThinking] = useState(false)
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null)
+  const [previewSource, setPreviewSource] = useState<SourceChunk | null>(null)
   const chatRef = useRef<HTMLDivElement>(null)
 
   const copyMessage = (text: string, index: number) => {
@@ -154,10 +157,15 @@ export default function ChatState({ corpusName, stats, onReset }: Props) {
                 {m.sources.map((s, j) => (
                   <Chip
                     key={j}
-                    label={s.split('/').pop()}
+                    label={s.path.split('/').pop()}
                     size="small"
                     variant="outlined"
-                    sx={{ bgcolor: 'rgba(127,119,221,0.12)', color: '#AFA9EC', borderColor: 'rgba(127,119,221,0.3)', fontSize: '0.67rem', height: 20 }}
+                    onClick={() => setPreviewSource(s)}
+                    sx={{
+                      bgcolor: 'rgba(127,119,221,0.12)', color: '#AFA9EC', borderColor: 'rgba(127,119,221,0.3)',
+                      fontSize: '0.67rem', height: 20, cursor: 'pointer',
+                      '&:hover': { bgcolor: 'rgba(127,119,221,0.22)' },
+                    }}
                   />
                 ))}
               </Stack>
@@ -215,6 +223,47 @@ export default function ChatState({ corpusName, stats, onReset }: Props) {
           </IconButton>
         </Stack>
       </Box>
+
+      {/* Source chunk preview -- what was actually retrieved, for debugging RAG quality */}
+      <Dialog open={!!previewSource} onClose={() => setPreviewSource(null)} maxWidth="sm" fullWidth>
+        {previewSource && (
+          <>
+            <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, pr: 6 }}>
+              <Typography variant="body2" sx={{ fontFamily: '"JetBrains Mono",monospace', fontWeight: 600, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {previewSource.path}
+              </Typography>
+              <Chip
+                label={`score ${previewSource.score.toFixed(2)}`}
+                size="small" variant="outlined" color="primary"
+                sx={{ fontFamily: '"JetBrains Mono",monospace', fontSize: '0.68rem' }}
+              />
+              <IconButton size="small" onClick={() => setPreviewSource(null)} sx={{ position: 'absolute', top: 8, right: 8 }}>
+                <CloseIcon sx={{ fontSize: 18 }} />
+              </IconButton>
+            </DialogTitle>
+            <DialogContent dividers>
+              <Typography
+                variant="body2"
+                sx={{
+                  fontFamily: '"JetBrains Mono",monospace', fontSize: '0.8rem', lineHeight: 1.8,
+                  whiteSpace: 'pre-wrap', color: 'text.primary',
+                }}
+              >
+                {previewSource.text}
+              </Typography>
+            </DialogContent>
+            <DialogActions>
+              <Button
+                size="small" startIcon={<ContentCopyIcon sx={{ fontSize: 14 }} />}
+                onClick={() => navigator.clipboard.writeText(previewSource.text)}
+              >
+                Copy chunk
+              </Button>
+              <Button size="small" onClick={() => setPreviewSource(null)}>Close</Button>
+            </DialogActions>
+          </>
+        )}
+      </Dialog>
 
     </Box>
   )
