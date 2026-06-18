@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 import re
 
-from ragfactory.core import Chunk, Chunker, Embedder, RawDocument
+from raginator.core import Chunk, Chunker, Embedder, RawDocument
 
 _SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+")
 

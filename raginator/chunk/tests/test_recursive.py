@@ -1,5 +1,5 @@
-from ragfactory.chunk import RecursiveChunker
-from ragfactory.core import RawDocument
+from raginator.chunk import RecursiveChunker
+from raginator.core import RawDocument
 
 
 def _doc(text: str) -> RawDocument:

@@ -1,5 +1,5 @@
-from ragfactory.chunk import FixedSizeChunker
-from ragfactory.core import RawDocument
+from raginator.chunk import FixedSizeChunker
+from raginator.core import RawDocument
 
 
 def _doc(text: str) -> RawDocument:

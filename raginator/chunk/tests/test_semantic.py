@@ -1,5 +1,5 @@
-from ragfactory.chunk import SemanticChunker
-from ragfactory.core import Embedder, RawDocument
+from raginator.chunk import SemanticChunker
+from raginator.core import Embedder, RawDocument
 
 
 class FakeEmbedder(Embedder):

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import ast
 
-from ragfactory.core import Chunk, Chunker, RawDocument
+from raginator.core import Chunk, Chunker, RawDocument
 
 
 class CodeChunker(Chunker):

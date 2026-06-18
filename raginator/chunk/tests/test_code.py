@@ -1,5 +1,5 @@
-from ragfactory.chunk import CodeChunker
-from ragfactory.core import RawDocument
+from raginator.chunk import CodeChunker
+from raginator.core import RawDocument
 
 
 def _doc(text: str) -> RawDocument:

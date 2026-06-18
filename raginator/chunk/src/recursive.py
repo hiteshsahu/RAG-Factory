@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ragfactory.core import Chunk, Chunker, RawDocument
+from raginator.core import Chunk, Chunker, RawDocument
 
 DEFAULT_SEPARATORS = ["\n\n", "\n", ". ", " ", ""]
 
