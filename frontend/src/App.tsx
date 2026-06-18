@@ -7,17 +7,22 @@ import type { PaletteMode } from '@mui/material'
 import LightModeIcon from '@mui/icons-material/LightMode'
 import DarkModeIcon from '@mui/icons-material/DarkMode'
 import getTheme from './theme'
-import { DEFAULT_SETTINGS, EMBED_MODELS, type CorpusStats, type PipelineSettings } from './data'
-import { streamPipelineStart } from './apiClient'
+import { DEFAULT_SETTINGS, EMBED_MODELS, type CorpusStats, type Message, type PipelineSettings } from './data'
+import { streamPipelineStart, queryBackend } from './apiClient'
 import { useLocalStorage } from './hooks/useLocalStorage'
 import DropState from './components/DropState'
 import ProcessState from './components/ProcessState'
 import ChatState from './components/ChatState'
 import SettingsDrawer from './components/SettingsDrawer'
+import HistoryDrawer, { type HistoryEntry } from './components/HistoryDrawer'
 
 type AppState = 'drop' | 'process' | 'chat'
 
 interface LogLine { text: string; kind: 'default' | 'success' | 'error' }
+
+interface FullHistoryEntry extends HistoryEntry {
+  messages: Message[]
+}
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
 
@@ -44,10 +49,17 @@ export default function App() {
   const [corpusName, setCorpusName] = useState('')
   const [settings, setSettings] = useLocalStorage<PipelineSettings>('raginator:settings', DEFAULT_SETTINGS)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [messages, setMessages] = useState<Message[]>([])
+  const [history, setHistory] = useLocalStorage<FullHistoryEntry[]>('raginator:chat-history', [])
+  const [historyOpen, setHistoryOpen] = useState(false)
+  const [activeHistoryId, setActiveHistoryId] = useState<number | null>(null)
   const [mode, setMode] = useState<PaletteMode>('dark')
   const theme = useMemo(() => getTheme(mode), [mode])
   const cancelRef = useRef(false)
   const lastRunRef = useRef<{ files: File[]; urls: string[] }>({ files: [], urls: [] })
+  // Resume id numbering above whatever was already persisted, so restored
+  // entries from a previous session can't collide with new ones.
+  const historyIdRef = useRef(history.reduce((max, h) => Math.max(max, h.id), 0))
 
   const addLog = useCallback((text: string, kind: LogLine['kind'] = 'default') => {
     setLogs(l => [...l, { text, kind }])
@@ -137,7 +149,44 @@ export default function App() {
     setStageStats({})
     setCorpusStats(null)
     setSuggestedQuestions([])
+    setMessages([])
+    setActiveHistoryId(null)
   }
+
+  // Lives at the App level (not ChatState) so the history drawer's persistent
+  // icon rail stays meaningful across all three app states, not just chat.
+  const sendMessage = useCallback(async (text: string) => {
+    const userMsg: Message = { role: 'user', text }
+    setMessages(m => [...m, userMsg])
+    setActiveHistoryId(null)
+
+    let botMsg: Message
+    try {
+      const result = await queryBackend(text)
+      botMsg = {
+        role: 'bot', text: result.answer, sources: result.sources,
+        ms: result.ms, tokens: result.tokens, cost: result.cost,
+      }
+    } catch (err) {
+      botMsg = { role: 'bot', text: `⚠️ ${err instanceof Error ? err.message : String(err)}` }
+    }
+
+    setMessages(m => [...m, botMsg])
+    const id = ++historyIdRef.current
+    setHistory(h => [{ id, query: text, time: Date.now(), messages: [userMsg, botMsg] }, ...h])
+    setActiveHistoryId(id)
+  }, [setHistory])
+
+  const restoreHistoryEntry = useCallback((entry: HistoryEntry) => {
+    const full = history.find(h => h.id === entry.id)
+    if (!full) return
+    setMessages(full.messages)
+    setActiveHistoryId(full.id)
+    setHistoryOpen(false)
+    // History is global (visible from drop/process too) but a restored
+    // conversation only makes sense in the chat view -- jump there.
+    setAppState('chat')
+  }, [history])
 
   const statusLabel = appState === 'process'
     ? (failedStage !== null ? 'failed' : 'processing')
@@ -152,7 +201,14 @@ export default function App() {
         <AppBar position="sticky" elevation={0} color="transparent">
           <Toolbar variant="dense" sx={{ gap: 1 }}>
             <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'primary.main', mr: 1 }} />
-            <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 600, letterSpacing: '-0.02em' }}>
+            <Typography
+              variant="h6"
+              onClick={handleReset}
+              sx={{
+                flexGrow: 1, fontWeight: 600, letterSpacing: '-0.02em', cursor: 'pointer',
+                userSelect: 'none', '&:hover': { opacity: 0.8 },
+              }}
+            >
               Raginator
             </Typography>
             <Chip
@@ -179,6 +235,15 @@ export default function App() {
         </AppBar>
 
         <Box sx={{ display: 'flex', minHeight: 'calc(100vh - 48px)' }}>
+          <HistoryDrawer
+            open={historyOpen}
+            entries={history}
+            activeId={activeHistoryId}
+            onSelect={restoreHistoryEntry}
+            onClose={() => setHistoryOpen(false)}
+            onOpen={() => setHistoryOpen(true)}
+          />
+
           <Box sx={{ flex: 1, minWidth: 0 }}>
             {appState === 'drop' && (
               <DropState onStart={runPipeline} settings={settings} onOpenSettings={() => setSettingsOpen(true)} />
@@ -201,6 +266,10 @@ export default function App() {
                 corpusName={corpusName}
                 stats={corpusStats ?? FALLBACK_CORPUS_STATS}
                 suggestedQuestions={suggestedQuestions}
+                messages={messages}
+                historyOpen={historyOpen}
+                onToggleHistory={() => setHistoryOpen(o => !o)}
+                onSend={sendMessage}
                 onReset={handleReset}
               />
             )}

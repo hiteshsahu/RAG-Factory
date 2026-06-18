@@ -25,6 +25,15 @@ export interface DemoAnswer {
   cost:    string
 }
 
+export interface Message {
+  role:    'user' | 'bot'
+  text:    string
+  sources?: SourceChunk[]
+  ms?:      number
+  tokens?:  number
+  cost?:    string
+}
+
 export interface CorpusStats {
   docs:            number
   chunks:          number

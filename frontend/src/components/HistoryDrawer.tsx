@@ -1,10 +1,13 @@
 import React from 'react'
 import {
-  Box, Drawer, IconButton, List, ListItemButton, ListItemText,
-  Stack, Typography,
+  Badge, Box, Drawer, IconButton, List, ListItemButton, ListItemText,
+  Stack, Tooltip, Typography,
 } from '@mui/material'
-import CloseIcon from '@mui/icons-material/Close'
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
+import ChevronRightIcon from '@mui/icons-material/ChevronRight'
+import HistoryIcon from '@mui/icons-material/History'
 import ManageSearchIcon from '@mui/icons-material/ManageSearch'
+import type { Theme } from '@mui/material'
 
 export interface HistoryEntry {
   id:    number
@@ -18,6 +21,7 @@ interface Props {
   activeId: number | null
   onSelect: (entry: HistoryEntry) => void
   onClose: () => void
+  onOpen: () => void
 }
 
 const relativeTime = (ts: number) => {
@@ -30,64 +34,94 @@ const relativeTime = (ts: number) => {
   return `${hours}h ago`
 }
 
-const DRAWER_WIDTH = 300
+const MINI_WIDTH = 64
+const FULL_WIDTH = 300
 
-export default function HistoryDrawer({ open, entries, activeId, onSelect, onClose }: Props) {
+// Mini variant persistent drawer, mirroring SettingsDrawer on the other
+// side: collapsed state stays mounted as a narrow icon rail (with an entry
+// count badge) instead of disappearing entirely; expanding reveals the list.
+export default function HistoryDrawer({ open, entries, activeId, onSelect, onClose, onOpen }: Props) {
+  const width = open ? FULL_WIDTH : MINI_WIDTH
+  const widthTransition = (theme: Theme) =>
+    theme.transitions.create('width', { duration: theme.transitions.duration.shorter })
+
   return (
     <Drawer
       variant="persistent"
       anchor="left"
-      open={open}
-      onClose={onClose}
+      open
       sx={{
-        width: open ? DRAWER_WIDTH : 0,
+        width,
         flexShrink: 0,
         overflowX: 'hidden',
-        transition: theme => theme.transitions.create('width', { duration: theme.transitions.duration.shorter }),
-        '& .MuiDrawer-paper': { width: DRAWER_WIDTH, boxSizing: 'border-box', position: 'relative' },
+        transition: widthTransition,
+        '& .MuiDrawer-paper': {
+          width, boxSizing: 'border-box', position: 'relative', overflowX: 'hidden',
+          transition: widthTransition,
+        },
       }}
     >
-      <Box sx={{ width: DRAWER_WIDTH, p: 2.5 }}>
-        <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-          <Typography variant="h6" fontWeight={600}>History</Typography>
-          <IconButton size="small" onClick={onClose} aria-label="Close history">
-            <CloseIcon sx={{ fontSize: 18 }} />
-          </IconButton>
+      <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <Stack
+          direction="row" alignItems="center"
+          justifyContent={open ? 'space-between' : 'center'}
+          sx={{ px: open ? 2.5 : 1, py: 2 }}
+        >
+          {open && <Typography variant="h6" fontWeight={600}>History</Typography>}
+          <Tooltip title={open ? 'Collapse' : 'Expand history'} placement="right">
+            <IconButton size="small" onClick={open ? onClose : onOpen} aria-label={open ? 'Collapse history' : 'Expand history'}>
+              {open ? <ChevronLeftIcon sx={{ fontSize: 18 }} /> : <ChevronRightIcon sx={{ fontSize: 18 }} />}
+            </IconButton>
+          </Tooltip>
         </Stack>
 
-        {entries.length === 0 ? (
-          <Stack alignItems="center" sx={{ opacity: 0.4, py: 6 }} spacing={1}>
-            <ManageSearchIcon sx={{ fontSize: 32 }} />
-            <Typography variant="body2" color="text.secondary" textAlign="center">
-              No questions yet. Ask something to build history.
-            </Typography>
-          </Stack>
+        {open ? (
+          <Box sx={{ px: 2.5, pb: 3, overflowY: 'auto' }}>
+            {entries.length === 0 ? (
+              <Stack alignItems="center" sx={{ opacity: 0.4, py: 6 }} spacing={1}>
+                <ManageSearchIcon sx={{ fontSize: 32 }} />
+                <Typography variant="body2" color="text.secondary" textAlign="center">
+                  No questions yet. Ask something to build history.
+                </Typography>
+              </Stack>
+            ) : (
+              <List disablePadding>
+                {entries.map(entry => (
+                  <ListItemButton
+                    key={entry.id}
+                    selected={entry.id === activeId}
+                    onClick={() => onSelect(entry)}
+                    sx={{
+                      borderRadius: 1.5, mb: 0.5, alignItems: 'flex-start',
+                      '&.Mui-selected': { bgcolor: 'rgba(29,158,117,0.12)' },
+                    }}
+                  >
+                    <ListItemText
+                      primary={entry.query}
+                      secondary={relativeTime(entry.time)}
+                      primaryTypographyProps={{
+                        variant: 'body2', fontWeight: 500,
+                        sx: { display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' },
+                      }}
+                      secondaryTypographyProps={{
+                        variant: 'caption', sx: { fontFamily: '"JetBrains Mono",monospace', fontSize: '0.68rem' },
+                      }}
+                    />
+                  </ListItemButton>
+                ))}
+              </List>
+            )}
+          </Box>
         ) : (
-          <List disablePadding>
-            {entries.map(entry => (
-              <ListItemButton
-                key={entry.id}
-                selected={entry.id === activeId}
-                onClick={() => onSelect(entry)}
-                sx={{
-                  borderRadius: 1.5, mb: 0.5, alignItems: 'flex-start',
-                  '&.Mui-selected': { bgcolor: 'rgba(29,158,117,0.12)' },
-                }}
-              >
-                <ListItemText
-                  primary={entry.query}
-                  secondary={relativeTime(entry.time)}
-                  primaryTypographyProps={{
-                    variant: 'body2', fontWeight: 500,
-                    sx: { display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' },
-                  }}
-                  secondaryTypographyProps={{
-                    variant: 'caption', sx: { fontFamily: '"JetBrains Mono",monospace', fontSize: '0.68rem' },
-                  }}
-                />
-              </ListItemButton>
-            ))}
-          </List>
+          <Stack alignItems="center" sx={{ pt: 1 }}>
+            <Tooltip title={entries.length ? `${entries.length} question${entries.length === 1 ? '' : 's'} in history` : 'No history yet'} placement="right">
+              <IconButton size="small" onClick={onOpen} aria-label="Expand history">
+                <Badge badgeContent={entries.length} color="primary" max={99} sx={{ '& .MuiBadge-badge': { fontSize: '0.6rem', height: 16, minWidth: 16 } }}>
+                  <HistoryIcon sx={{ fontSize: 20, color: 'primary.main' }} />
+                </Badge>
+              </IconButton>
+            </Tooltip>
+          </Stack>
         )}
       </Box>
     </Drawer>

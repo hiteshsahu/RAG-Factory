@@ -10,28 +10,16 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import CheckIcon from '@mui/icons-material/Check'
 import CloseIcon from '@mui/icons-material/Close'
 import HistoryIcon from '@mui/icons-material/History'
-import { DEMO_QA, formatBytes, type CorpusStats, type SourceChunk } from '../data'
-import HistoryDrawer, { type HistoryEntry } from './HistoryDrawer'
-import { useLocalStorage } from '../hooks/useLocalStorage'
-import { queryBackend } from '../apiClient'
-
-interface Message {
-  role: 'user' | 'bot'
-  text: string
-  sources?: SourceChunk[]
-  ms?: number
-  tokens?: number
-  cost?: string
-}
-
-interface FullHistoryEntry extends HistoryEntry {
-  messages: Message[]
-}
+import { DEMO_QA, formatBytes, type CorpusStats, type Message, type SourceChunk } from '../data'
 
 interface Props {
   corpusName: string
   stats: CorpusStats
   suggestedQuestions: string[]
+  messages: Message[]
+  historyOpen: boolean
+  onToggleHistory: () => void
+  onSend: (text: string) => Promise<void>
   onReset: () => void
 }
 
@@ -45,21 +33,16 @@ const STAT_ITEMS = (stats: CorpusStats) => [
 
 const IS_MAC = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
 
-export default function ChatState({ corpusName, stats, suggestedQuestions, onReset }: Props) {
-  const [messages, setMessages] = useState<Message[]>([])
+export default function ChatState({
+  corpusName, stats, suggestedQuestions, messages, historyOpen, onToggleHistory, onSend, onReset,
+}: Props) {
   const [query, setQuery]       = useState('')
   const [thinking, setThinking] = useState(false)
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null)
   const [previewSource, setPreviewSource] = useState<SourceChunk | null>(null)
   const [inputFocused, setInputFocused] = useState(false)
-  const [history, setHistory] = useLocalStorage<FullHistoryEntry[]>('raginator:chat-history', [])
-  const [historyOpen, setHistoryOpen] = useState(false)
-  const [activeHistoryId, setActiveHistoryId] = useState<number | null>(null)
   const chatRef = useRef<HTMLDivElement>(null)
   const queryInputRef = useRef<HTMLInputElement>(null)
-  // Resume id numbering above whatever was already persisted, so restored
-  // entries from a previous session can't collide with new ones.
-  const historyIdRef = useRef(history.reduce((max, h) => Math.max(max, h.id), 0))
 
   const copyMessage = (text: string, index: number) => {
     navigator.clipboard.writeText(text)
@@ -87,36 +70,9 @@ export default function ChatState({ corpusName, stats, suggestedQuestions, onRes
     const text = (q ?? query).trim()
     if (!text || thinking) return
     setQuery('')
-    const userMsg: Message = { role: 'user', text }
-    setMessages(m => [...m, userMsg])
-    setActiveHistoryId(null)
     setThinking(true)
-
-    let botMsg: Message
-    try {
-      const result = await queryBackend(text)
-      botMsg = {
-        role: 'bot', text: result.answer, sources: result.sources,
-        ms: result.ms, tokens: result.tokens, cost: result.cost,
-      }
-    } catch (err) {
-      botMsg = { role: 'bot', text: `⚠️ ${err instanceof Error ? err.message : String(err)}` }
-    }
-
+    await onSend(text)
     setThinking(false)
-    setMessages(m => [...m, botMsg])
-
-    const id = ++historyIdRef.current
-    setHistory(h => [{ id, query: text, time: Date.now(), messages: [userMsg, botMsg] }, ...h])
-    setActiveHistoryId(id)
-  }
-
-  const restoreEntry = (entry: HistoryEntry) => {
-    const full = history.find(h => h.id === entry.id)
-    if (!full) return
-    setMessages(full.messages)
-    setActiveHistoryId(full.id)
-    setHistoryOpen(false)
   }
 
   // Real, corpus-derived suggestions from the pipeline's "complete" event
@@ -125,22 +81,12 @@ export default function ChatState({ corpusName, stats, suggestedQuestions, onRes
   const questionChips = hasRealSuggestions ? suggestedQuestions : DEMO_QA.map(qa => qa.q)
 
   return (
-    <Box sx={{ display: 'flex', height: 'calc(100vh - 48px)' }}>
-
-      <HistoryDrawer
-        open={historyOpen}
-        entries={history}
-        activeId={activeHistoryId}
-        onSelect={restoreEntry}
-        onClose={() => setHistoryOpen(false)}
-      />
-
-      <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', p: 2 }}>
+      <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', p: 2 }}>
 
       {/* Corpus bar */}
       <Box sx={{ px: 2, py: 0.75, borderBottom: '0.5px solid rgba(255,255,255,0.08)', bgcolor: 'background.paper', display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
         <Tooltip title={historyOpen ? 'Hide history' : 'Show history'}>
-          <IconButton size="small" onClick={() => setHistoryOpen(o => !o)} color={historyOpen ? 'primary' : 'default'}>
+          <IconButton size="small" onClick={onToggleHistory} color={historyOpen ? 'primary' : 'default'}>
             <HistoryIcon sx={{ fontSize: 18 }} />
           </IconButton>
         </Tooltip>
@@ -350,7 +296,5 @@ export default function ChatState({ corpusName, stats, suggestedQuestions, onRes
       </Dialog>
 
       </Box>
-
-    </Box>
   )
 }
