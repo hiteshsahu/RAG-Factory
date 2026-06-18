@@ -86,11 +86,11 @@ case ${option} in
     echo "=== 🧹 CLEANUP ==="
     echo "🧹  clean             -- Remove .venv, native/build, __pycache__, egg-info, caches"
     ;;
-`
+
   5)
     echo "=== 📈 OBSERVABILITY ==="
     echo "📊  observe           -- docker/podman compose up Prometheus+Grafana, open the dashboard"
-    echo "📈  metrics_server    -- collect matrics, exposing :8000/metrics"
+    echo "📈  metrics_server    -- collect metrics, exposing :8000/metrics"
     ;;
 
   6)
@@ -185,7 +185,7 @@ function typecheck() {
   # nested src/) as a content-less namespace package that shadows the real,
   # properly-installed raginator.<stage> -- the same family of bug as the
   # python -m / pytest cwd-collision gotchas, just mypy's own variant of it.
-  "$MYPY" --no-namespace-packages api/main.py api/preflight.py api/providers.py api/pipeline_runner.py api/schemas.py
+  "$MYPY" --no-namespace-packages api/main.py api/metrics.py api/preflight.py api/providers.py api/pipeline_runner.py api/schemas.py
 }
 
 function check() {

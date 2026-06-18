@@ -8,3 +8,9 @@ scrape_configs:
       # host (not in a container) -- host.docker.internal/host.containers.internal
       # both resolve to the host from inside the prometheus container.
       - targets: ["host.docker.internal:8000"]
+        labels: { source: demo }
+      # The real FastAPI bridge (`./go api`) -- same metric names, so panels
+      # show combined activity; the `source` label tells them apart if you
+      # need to filter the toy demo loop out.
+      - targets: ["host.docker.internal:8001"]
+        labels: { source: bridge }

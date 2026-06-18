@@ -4,6 +4,7 @@ import json
 from collections.abc import AsyncIterator
 from typing import Any
 
+from api.metrics import prometheus_observer
 from api.pipeline_runner import run_pipeline
 from api.preflight import preflight
 from api.schemas import (
@@ -16,8 +17,9 @@ from api.schemas import (
 )
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import Response, StreamingResponse
 from fastapi.routing import APIRoute
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from raginator.core import StageError
 
 app = FastAPI(title="Raginator bridge")
@@ -62,6 +64,15 @@ async def root() -> dict[str, Any]:
 @app.get("/api/health")
 async def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/metrics")
+async def metrics() -> Response:
+    """Real bridge usage (uploads, queries) as Prometheus counters -- add
+    this bridge as its own scrape target (see docker/prometheus.yml) to see
+    actual UI activity in Grafana, not just `./go metrics_server`'s toy demo
+    loop on :8000."""
+    return Response(generate_latest(prometheus_observer.registry), media_type=CONTENT_TYPE_LATEST)
 
 
 @app.post("/api/pipeline/start")

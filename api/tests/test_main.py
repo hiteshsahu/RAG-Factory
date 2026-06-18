@@ -2,6 +2,7 @@ import json
 from unittest.mock import Mock, patch
 
 from api.main import _STATE, app
+from api.metrics import prometheus_observer
 from fastapi.testclient import TestClient
 
 client = TestClient(app)
@@ -82,7 +83,9 @@ def test_root_lists_routes_and_docs_links():
     assert body["docs"] == {"swagger": "/docs", "redoc": "/redoc", "openapi": "/openapi.json"}
 
     paths = {route["path"] for route in body["routes"]}
-    assert paths == {"/", "/api/health", "/api/pipeline/start", "/api/query", "/api/corpus/stats"}
+    assert paths == {
+        "/", "/api/health", "/api/pipeline/start", "/api/query", "/api/corpus/stats", "/metrics",
+    }
 
 
 def test_query_without_corpus_returns_409():
@@ -101,6 +104,9 @@ def test_full_pipeline_run_then_query(monkeypatch, tmp_path):
     monkeypatch.setenv("RAGINATOR_MISTRAL_API_KEY", "test-key")
     _STATE["pipeline"] = None
     _STATE["corpus_stats"] = None
+
+    index_before = prometheus_observer.registry.get_sample_value("raginator_index_requests_total") or 0
+    query_before = prometheus_observer.registry.get_sample_value("raginator_query_requests_total") or 0
 
     settings = {
         "embedProvider": "Mistral",
@@ -142,3 +148,15 @@ def test_full_pipeline_run_then_query(monkeypatch, tmp_path):
     assert body["sources"]
     assert body["sources"][0]["path"]
     assert body["cost"].startswith("$")
+
+    # The bridge bypasses Pipeline.index() (drives stages manually for SSE
+    # progress), so without an explicit observer.record("indexed", ...) call
+    # this would stay at 0 forever even though real uploads were happening.
+    index_after = prometheus_observer.registry.get_sample_value("raginator_index_requests_total")
+    query_after = prometheus_observer.registry.get_sample_value("raginator_query_requests_total")
+    assert index_after == index_before + 1
+    assert query_after == query_before + 1
+
+    metrics_response = client.get("/metrics")
+    assert metrics_response.status_code == 200
+    assert b"raginator_index_requests_total" in metrics_response.content

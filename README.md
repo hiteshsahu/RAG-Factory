@@ -119,6 +119,8 @@ Grafana auto-provisions the Prometheus datasource and loads `raginator/observe/d
 Run `./go metrics_server` alongside it in another shell so
 the panels have live data to show instead of "No data".
 
+![Dashboard](./img/grafana.png)
+
 ### 🔎 Test 
 
 ```bash

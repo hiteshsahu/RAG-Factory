@@ -7,11 +7,11 @@ from pathlib import Path
 from typing import Any
 
 from api import providers
+from api.metrics import bridge_observer
 from api.schemas import EMBED_MODELS, CorpusStats, PipelineSettings
 from raginator.core import Chunk, Generator, RetrievedChunk
 from raginator.evaluate import KeywordOverlapEvaluator
 from raginator.ingest import PDFIngestor, TextFileIngestor
-from raginator.observe import LoggingObserver
 from raginator.pipeline import Pipeline
 from raginator.rerank import IdentityReranker
 from raginator.retrieve import DenseRetriever
@@ -160,6 +160,15 @@ async def run_pipeline(
             yield {"type": "log", "stage": stage_num, "text": f"{label} ready", "kind": "default"}
             yield {"type": "stage_done", "stage": stage_num, "stat": "ready"}
 
+        # Pipeline.index() is what normally fires the "indexed" observer
+        # event, but the bridge drives ingest/chunk/embed/store manually
+        # above (for per-stage SSE progress) instead of calling it -- so
+        # without this, real uploads through the UI would never show up in
+        # Prometheus/Grafana at all, only the unrelated `./go metrics_server`
+        # toy demo loop would.
+        observer = bridge_observer()
+        observer.record("indexed", chunk_count=len(all_chunks))
+
         pipeline = Pipeline(
             ingestor=TextFileIngestor(tmp_dir),
             chunker=chunker,
@@ -169,7 +178,7 @@ async def run_pipeline(
             reranker=reranker,
             generator=generator,
             evaluator=evaluator,
-            observer=LoggingObserver(),
+            observer=observer,
         )
 
         avg_chunk_tokens = (
