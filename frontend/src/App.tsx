@@ -7,7 +7,7 @@ import type { PaletteMode } from '@mui/material'
 import LightModeIcon from '@mui/icons-material/LightMode'
 import DarkModeIcon from '@mui/icons-material/DarkMode'
 import getTheme from './theme'
-import { STAGES } from './data'
+import { STAGES, formatBytes } from './data'
 import DropState from './components/DropState'
 import ProcessState from './components/ProcessState'
 import ChatState from './components/ChatState'
@@ -28,6 +28,7 @@ export default function App() {
   const [activeStage, setActiveStage] = useState(-1)
   const [failedStage, setFailedStage] = useState<number | null>(null)
   const [logs, setLogs]             = useState<LogLine[]>([])
+  const [stageStats, setStageStats] = useState<Record<number, string>>({})
   const [corpusName, setCorpusName] = useState('')
   const [mode, setMode] = useState<PaletteMode>('dark')
   const theme = useMemo(() => getTheme(mode), [mode])
@@ -51,6 +52,30 @@ export default function App() {
     setFailedStage(null)
     setLogs([])
 
+    // Real numbers from whatever was actually dropped, not the canned demo
+    // stats -- only Stage 0 gets to know the real file names/sizes, so its
+    // log lines and "Nx files · Y MB" stat reflect the real input. The doc
+    // count then gets substituted into the rest of the (still-scripted)
+    // pipeline so the same number shows up consistently downstream.
+    const itemCount = files.length || urls.length || 1
+    const totalBytes = files.reduce((sum, f) => sum + f.size, 0)
+    const sourceLabel = files.length
+      ? `${files.length} file${files.length === 1 ? '' : 's'} · ${formatBytes(totalBytes)}`
+      : `${urls.length} URL${urls.length === 1 ? '' : 's'}`
+    setStageStats({ 0: sourceLabel })
+
+    const ingestLogs = files.length
+      ? [
+          'Loading PDF parser…',
+          ...files.map(f => `Reading ${f.name} (${formatBytes(f.size)})…`),
+          `${itemCount} RawDocument object${itemCount === 1 ? '' : 's'} extracted`,
+        ]
+      : [
+          'Resolving URL(s)…',
+          ...urls.map(u => `Fetching ${u}…`),
+          `${itemCount} RawDocument object${itemCount === 1 ? '' : 's'} extracted`,
+        ]
+
     const failAt = Math.random() < FAILURE_RATE
       ? Math.floor(Math.random() * STAGES.length)
       : -1
@@ -58,7 +83,8 @@ export default function App() {
     for (let i = 0; i < STAGES.length; i++) {
       if (cancelRef.current) return
       setActiveStage(i)
-      for (const log of STAGES[i].logs) {
+      const stageLogs = i === 0 ? ingestLogs : STAGES[i].logs.map(l => l.replace(/247/g, String(itemCount)))
+      for (const log of stageLogs) {
         if (cancelRef.current) return
         await sleep(300)
         addLog(log)
@@ -66,7 +92,8 @@ export default function App() {
       await sleep(200)
 
       if (i === failAt) {
-        addLog(`Stage ${i} (${STAGES[i].name}) failed: ${STAGES[i].error}`, 'error')
+        const errorText = STAGES[i].error.replace(/247/g, String(itemCount))
+        addLog(`Stage ${i} (${STAGES[i].name}) failed: ${errorText}`, 'error')
         setFailedStage(i)
         return
       }
@@ -93,6 +120,7 @@ export default function App() {
     setActiveStage(-1)
     setFailedStage(null)
     setLogs([])
+    setStageStats({})
   }
 
   const statusLabel = appState === 'process'
@@ -142,6 +170,7 @@ export default function App() {
             stagesDone={stagesDone}
             activeStage={activeStage}
             failedStage={failedStage}
+            stageStats={stageStats}
             logs={logs}
             onRetry={handleRetry}
             onReset={handleReset}

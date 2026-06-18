@@ -1,3 +1,6 @@
+export const formatBytes = (b: number) =>
+  b > 1_048_576 ? (b / 1_048_576).toFixed(1) + ' MB' : Math.round(b / 1024) + ' KB'
+
 export interface Stage {
   num:   number
   name:  string

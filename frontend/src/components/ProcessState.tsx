@@ -13,12 +13,13 @@ interface Props {
   stagesDone: number
   activeStage: number
   failedStage: number | null
+  stageStats: Record<number, string>
   logs: LogLine[]
   onRetry: () => void
   onReset: () => void
 }
 
-export default function ProcessState({ stagesDone, activeStage, failedStage, logs, onRetry, onReset }: Props) {
+export default function ProcessState({ stagesDone, activeStage, failedStage, stageStats, logs, onRetry, onReset }: Props) {
   const logRef = useRef<HTMLDivElement>(null)
   const failed = failedStage !== null
 
@@ -117,7 +118,7 @@ export default function ProcessState({ stagesDone, activeStage, failedStage, log
                         color: isFailed ? 'error.main' : done ? 'primary.main' : 'text.secondary',
                       }}
                     >
-                      {isFailed ? 'failed' : done ? s.stats : active ? 'running…' : 'waiting…'}
+                      {isFailed ? 'failed' : done ? (stageStats[i] ?? s.stats) : active ? 'running…' : 'waiting…'}
                     </Typography>
                   </Stack>
                 </Card>

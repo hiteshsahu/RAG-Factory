@@ -8,13 +8,13 @@ import CloseIcon from '@mui/icons-material/Close'
 import LinkIcon from '@mui/icons-material/Link'
 import DescriptionIcon from '@mui/icons-material/Description'
 import ArticleIcon from '@mui/icons-material/Article'
+import { formatBytes } from '../data'
 
 interface Props {
   onStart: (files: File[], urls: string[]) => void
 }
 
-const fmtSize = (b: number) =>
-  b > 1_048_576 ? (b / 1_048_576).toFixed(1) + ' MB' : Math.round(b / 1024) + ' KB'
+const fmtSize = formatBytes
 
 const FileIcon = ({ name }: { name: string }) => {
   if (name.endsWith('.pdf')) return <DescriptionIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
