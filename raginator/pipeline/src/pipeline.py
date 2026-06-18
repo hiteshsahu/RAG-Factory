@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Self
 
-from ragfactory.core import (
+from raginator.core import (
     Chunker,
     Embedder,
     Evaluator,
@@ -52,17 +52,17 @@ class Pipeline:
         only), tuned by PipelineConfig. Construct a Pipeline directly instead
         to wire in real providers (Mistral, Chroma, pgvector, ...) -- the
         concrete classes are imported here, lazily, so just importing
-        ragfactory.pipeline doesn't pull in every other stage's deps.
+        raginator.pipeline doesn't pull in every other stage's deps.
         """
-        from ragfactory.chunk import FixedSizeChunker
-        from ragfactory.embed import HashingEmbedder
-        from ragfactory.evaluate import KeywordOverlapEvaluator
-        from ragfactory.generate import TemplateGenerator
-        from ragfactory.ingest import TextFileIngestor
-        from ragfactory.observe import LoggingObserver
-        from ragfactory.rerank import IdentityReranker
-        from ragfactory.retrieve import DenseRetriever
-        from ragfactory.store import InMemoryVectorStore
+        from raginator.chunk import FixedSizeChunker
+        from raginator.embed import HashingEmbedder
+        from raginator.evaluate import KeywordOverlapEvaluator
+        from raginator.generate import TemplateGenerator
+        from raginator.ingest import TextFileIngestor
+        from raginator.observe import LoggingObserver
+        from raginator.rerank import IdentityReranker
+        from raginator.retrieve import DenseRetriever
+        from raginator.store import InMemoryVectorStore
 
         config = config or PipelineConfig()
         embedder = HashingEmbedder(dim=config.embedding_dim)

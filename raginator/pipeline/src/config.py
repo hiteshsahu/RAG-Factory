@@ -14,7 +14,7 @@ class PipelineConfig(BaseSettings):
     """
 
     model_config = SettingsConfigDict(
-        env_prefix="RAGFACTORY_PIPELINE_", env_file=".env", extra="ignore"
+        env_prefix="RAGINATOR_PIPELINE_", env_file=".env", extra="ignore"
     )
 
     source_dir: str = "."

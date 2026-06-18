@@ -1,15 +1,15 @@
 from pathlib import Path
 
-from ragfactory.chunk import FixedSizeChunker
-from ragfactory.embed import HashingEmbedder
-from ragfactory.evaluate import KeywordOverlapEvaluator
-from ragfactory.generate import TemplateGenerator
-from ragfactory.ingest import TextFileIngestor
-from ragfactory.observe import LoggingObserver
-from ragfactory.pipeline import Pipeline, PipelineConfig
-from ragfactory.rerank import IdentityReranker
-from ragfactory.retrieve import DenseRetriever, SparseRetriever
-from ragfactory.store import InMemoryVectorStore
+from raginator.chunk import FixedSizeChunker
+from raginator.embed import HashingEmbedder
+from raginator.evaluate import KeywordOverlapEvaluator
+from raginator.generate import TemplateGenerator
+from raginator.ingest import TextFileIngestor
+from raginator.observe import LoggingObserver
+from raginator.pipeline import Pipeline, PipelineConfig
+from raginator.rerank import IdentityReranker
+from raginator.retrieve import DenseRetriever, SparseRetriever
+from raginator.store import InMemoryVectorStore
 
 
 def build_pipeline(source_dir: Path) -> Pipeline:
