@@ -10,9 +10,10 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import CheckIcon from '@mui/icons-material/Check'
 import CloseIcon from '@mui/icons-material/Close'
 import HistoryIcon from '@mui/icons-material/History'
-import { DEMO_QA, DemoAnswer, formatBytes, type CorpusStats, type SourceChunk } from '../data'
+import { DEMO_QA, formatBytes, type CorpusStats, type SourceChunk } from '../data'
 import HistoryDrawer, { type HistoryEntry } from './HistoryDrawer'
 import { useLocalStorage } from '../hooks/useLocalStorage'
+import { queryBackend } from '../apiClient'
 
 interface Message {
   role: 'user' | 'bot'
@@ -41,7 +42,6 @@ const STAT_ITEMS = (stats: CorpusStats) => [
   { label: 'Index size',      value: formatBytes(stats.indexSizeBytes) },
 ]
 
-const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
 const IS_MAC = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
 
 export default function ChatState({ corpusName, stats, onReset }: Props) {
@@ -90,15 +90,19 @@ export default function ChatState({ corpusName, stats, onReset }: Props) {
     setMessages(m => [...m, userMsg])
     setActiveHistoryId(null)
     setThinking(true)
-    await sleep(700 + Math.random() * 500)
 
-    const words = text.toLowerCase().split(' ').slice(0, 3).join(' ')
-    const match: DemoAnswer =
-      DEMO_QA.find(a => a.q.toLowerCase().includes(words)) ??
-      DEMO_QA[Math.floor(Math.random() * DEMO_QA.length)]
+    let botMsg: Message
+    try {
+      const result = await queryBackend(text)
+      botMsg = {
+        role: 'bot', text: result.answer, sources: result.sources,
+        ms: result.ms, tokens: result.tokens, cost: result.cost,
+      }
+    } catch (err) {
+      botMsg = { role: 'bot', text: `⚠️ ${err instanceof Error ? err.message : String(err)}` }
+    }
 
     setThinking(false)
-    const botMsg: Message = { role: 'bot', text: match.a, sources: match.sources, ms: match.ms, tokens: match.tokens, cost: match.cost }
     setMessages(m => [...m, botMsg])
 
     const id = ++historyIdRef.current

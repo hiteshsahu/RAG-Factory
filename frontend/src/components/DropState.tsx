@@ -58,11 +58,8 @@ export default function DropState({ onStart, settings, onOpenSettings }: Props) 
   }
 
   const handleStart = () => {
-    if (!files.length && !urls.length) {
-      onStart([], ['https://docs.mistral.ai'])
-    } else {
-      onStart(files, urls)
-    }
+    if (!files.length && !urls.length) return
+    onStart(files, urls)
   }
 
   return (
@@ -174,6 +171,7 @@ export default function DropState({ onStart, settings, onOpenSettings }: Props) 
           variant="contained" color="primary" fullWidth size="large"
           endIcon={<span style={{ fontSize: 20 }}>›</span>}
           onClick={handleStart}
+          disabled={!files.length && !urls.length}
           sx={{ py: 1.5, fontSize: '0.95rem' }}
         >
           Start Raginator

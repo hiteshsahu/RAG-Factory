@@ -7,10 +7,8 @@ import type { PaletteMode } from '@mui/material'
 import LightModeIcon from '@mui/icons-material/LightMode'
 import DarkModeIcon from '@mui/icons-material/DarkMode'
 import getTheme from './theme'
-import {
-  STAGES, formatBytes, DEFAULT_SETTINGS, EMBED_MODELS, LLM_MODELS,
-  type CorpusStats, type PipelineSettings,
-} from './data'
+import { DEFAULT_SETTINGS, EMBED_MODELS, type CorpusStats, type PipelineSettings } from './data'
+import { streamPipelineStart } from './apiClient'
 import DropState from './components/DropState'
 import ProcessState from './components/ProcessState'
 import ChatState from './components/ChatState'
@@ -22,9 +20,11 @@ interface LogLine { text: string; kind: 'default' | 'success' | 'error' }
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
 
-// Demo-only: simulates real pipelines failing partway through, so the UI's
-// error handling is actually exercised instead of always happy-pathing.
-const FAILURE_RATE = 0.3
+// -1 is a sentinel for "failed before any stage started" (preflight, or a
+// connection error) -- distinct from `null` (no failure) and from a real
+// stage index (0-7).
+const PREFLIGHT_STAGE = -1
+
 const FALLBACK_CORPUS_STATS: CorpusStats = {
   docs: 0, chunks: 0, avgChunkTokens: 0,
   embeddingModel: `${EMBED_MODELS.Mistral.name} · ${EMBED_MODELS.Mistral.dim}-dim`,
@@ -54,122 +54,69 @@ export default function App() {
   const runPipeline = useCallback(async (files: File[], urls: string[]) => {
     cancelRef.current = false
     lastRunRef.current = { files, urls }
-    const name = files.length
-      ? files[0].name.replace(/\.[^.]+$/, '')
-      : new URL(urls[0]).hostname
-    setCorpusName(name)
+
     setAppState('process')
     setStagesDone(0)
     setActiveStage(0)
     setFailedStage(null)
     setLogs([])
+    setStageStats({})
+    setCorpusStats(null)
 
-    // Real numbers from whatever was actually dropped, not the canned demo
-    // stats -- only Stage 0 gets to know the real file names/sizes, so its
-    // log lines and "Nx files · Y MB" stat reflect the real input. The doc
-    // count then gets substituted into the rest of the (still-scripted)
-    // pipeline so the same number shows up consistently downstream.
-    const itemCount = files.length || urls.length || 1
-    const totalBytes = files.reduce((sum, f) => sum + f.size, 0)
-    const sourceLabel = files.length
-      ? `${files.length} file${files.length === 1 ? '' : 's'} · ${formatBytes(totalBytes)}`
-      : `${urls.length} URL${urls.length === 1 ? '' : 's'}`
-
-    // Chunks/index size are derived from the real byte count (~1.4 KB of
-    // text per chunk) rather than a fixed demo number, so they scale with
-    // whatever was actually dropped. URLs have no real byte count to read,
-    // so fall back to a per-page estimate.
-    const estimatedBytes = files.length ? totalBytes : urls.length * 50_000
-    const chunkCount = Math.max(itemCount, Math.round(estimatedBytes / 1400))
-    const avgChunkTokens = 312
-    const embedModel = EMBED_MODELS[settings.embedProvider]
-    const newCorpusStats: CorpusStats = {
-      docs: itemCount,
-      chunks: chunkCount,
-      avgChunkTokens,
-      embeddingModel: `${embedModel.name} · ${embedModel.dim}-dim`,
-      indexSizeBytes: chunkCount * embedModel.dim * 4, // float32 vectors
+    if (files.length === 0) {
+      // The bridge only ingests real files -- WebIngestor/GitHubIngestor
+      // aren't wired in yet, so a URL-only run can't actually be honored.
+      setCorpusName(urls[0] ? new URL(urls[0]).hostname : 'corpus')
+      addLog("URL ingestion isn't wired into the bridge yet -- drop a file instead (PDF, TXT, or MD).", 'error')
+      setFailedStage(PREFLIGHT_STAGE)
+      return
     }
+    setCorpusName(files[0].name.replace(/\.[^.]+$/, ''))
 
-    const ingestLogs = files.length
-      ? [
-          'Loading PDF parser…',
-          ...files.map(f => `Reading ${f.name} (${formatBytes(f.size)})…`),
-          `${itemCount} RawDocument object${itemCount === 1 ? '' : 's'} extracted`,
-        ]
-      : [
-          'Resolving URL(s)…',
-          ...urls.map(u => `Fetching ${u}…`),
-          `${itemCount} RawDocument object${itemCount === 1 ? '' : 's'} extracted`,
-        ]
-
-    // Per-stage overrides driven by the chosen settings, so picking a
-    // provider in the drawer actually changes what the run shows -- not
-    // just the next one but the rest of this (still-scripted) pipeline too.
-    const stageLogOverrides: Record<number, string[]> = {
-      0: ingestLogs,
-      1: [
-        `${settings.chunkStrategy} chunker init…`,
-        'Splitting documents…',
-        `${itemCount} docs → ${chunkCount.toLocaleString()} chunks`,
-      ],
-      2: [
-        `${settings.embedProvider} embed API ready (${embedModel.name})`,
-        `Embedding ${chunkCount.toLocaleString()} chunks…`,
-        'Done',
-      ],
-      3: [
-        `${settings.vectorStore} collection created`,
-        'Inserting vectors…',
-        `${chunkCount.toLocaleString()} persisted`,
-      ],
-      6: [
-        `${settings.llmProvider} API connected (${LLM_MODELS[settings.llmProvider]})`,
-        'Self-RAG strategy loaded',
-        'Generator ready',
-      ],
-    }
-    const stageStatOverrides: Record<number, string> = {
-      0: sourceLabel,
-      1: `${chunkCount.toLocaleString()} chunks · avg ${avgChunkTokens} tok`,
-      2: `dim=${embedModel.dim} · ${settings.embedProvider}`,
-      3: `${settings.vectorStore} · ${chunkCount.toLocaleString()} vectors`,
-      6: `${LLM_MODELS[settings.llmProvider]} · Self-RAG`,
-    }
-    setStageStats(stageStatOverrides)
-
-    const failAt = Math.random() < FAILURE_RATE
-      ? Math.floor(Math.random() * STAGES.length)
-      : -1
-
-    for (let i = 0; i < STAGES.length; i++) {
-      if (cancelRef.current) return
-      setActiveStage(i)
-      const stageLogs = stageLogOverrides[i] ?? STAGES[i].logs.map(l => l.replace(/247/g, String(itemCount)))
-      for (const log of stageLogs) {
+    try {
+      for await (const event of streamPipelineStart(files, settings)) {
         if (cancelRef.current) return
-        await sleep(300)
-        addLog(log)
-      }
-      await sleep(200)
 
-      if (i === failAt) {
-        const errorText = STAGES[i].error.replace(/247/g, String(itemCount))
-        addLog(`Stage ${i} (${STAGES[i].name}) failed: ${errorText}`, 'error')
-        setFailedStage(i)
-        return
-      }
+        switch (event.type) {
+          case 'preflight_failed':
+            for (const err of event.errors ?? []) addLog(err, 'error')
+            setFailedStage(PREFLIGHT_STAGE)
+            return
 
-      setStagesDone(i + 1)
-      await sleep(150)
+          case 'log':
+            if (event.stage !== undefined) setActiveStage(event.stage)
+            addLog(event.text ?? '', event.kind ?? 'default')
+            break
+
+          case 'stage_done':
+            if (event.stage !== undefined) {
+              setStagesDone(event.stage + 1)
+              if (event.stat) {
+                const stage = event.stage
+                const stat = event.stat
+                setStageStats(s => ({ ...s, [stage]: stat }))
+              }
+            }
+            break
+
+          case 'error':
+            addLog(event.text ?? 'Unknown error', 'error')
+            setFailedStage(event.stage ?? PREFLIGHT_STAGE)
+            return
+
+          case 'complete':
+            addLog('Pipeline complete.', 'success')
+            if (event.corpusStats) setCorpusStats(event.corpusStats)
+            await sleep(500)
+            setAppState('chat')
+            return
+        }
+      }
+    } catch (err) {
+      addLog(err instanceof Error ? err.message : String(err), 'error')
+      setFailedStage(PREFLIGHT_STAGE)
     }
-
-    await sleep(300)
-    addLog('Pipeline complete. Perry the Platypus has not been detected.', 'success')
-    setCorpusStats(newCorpusStats)
-    await sleep(700)
-    setAppState('chat')
-  }, [addLog])
+  }, [addLog, settings])
 
   const handleRetry = useCallback(() => {
     const { files, urls } = lastRunRef.current

@@ -46,6 +46,7 @@ Commands:
 === 3. ⚡ NATIVE ACCELERATION    ===
 === 4. 🧹 CLEANUP                ===
 === 5. 📈 OBSERVABILITY          ===
+=== 6. 🌉 BRIDGE                 ===
 
 Enter a number to see details:
 HEREDOC
@@ -90,6 +91,11 @@ case ${option} in
     echo "=== 📈 OBSERVABILITY ==="
     echo "📈  metrics_server    -- Run the toy pipeline on a loop, exposing :8000/metrics"
     echo "📊  observe           -- docker/podman compose up Prometheus+Grafana, open the dashboard"
+    ;;
+
+  6)
+    echo "=== 🌉 BRIDGE ==="
+    echo "🌉  api               -- Run the FastAPI bridge (uvicorn) on :8001 for the frontend"
     ;;
   *)
     echo "Section $option does not exist"
@@ -144,6 +150,11 @@ function test() {
   # "raginator" -- same as the import namespace -- which then shadows the
   # editable-install finder for raginator.<stage>.
   local stage="${1:-}"
+  if [ "$stage" == "api" ]; then
+    log "🧪 Testing api..."
+    "$PYTEST" "api/tests"
+    return
+  fi
   if [ -n "$stage" ]; then
     log "🧪 Testing raginator.$stage..."
     "$PYTEST" "raginator/$stage/tests"
@@ -155,7 +166,7 @@ function test() {
 
 function lint() {
   log "🔎 Linting..."
-  "$RUFF" check raginator
+  "$RUFF" check raginator api
 }
 
 function typecheck() {
@@ -167,6 +178,13 @@ function typecheck() {
   for s in core ingest chunk embed store retrieve rerank generate evaluate observe pipeline; do
     (cd "raginator/$s" && "$MYPY" src)
   done
+  # api/ is flat (no nested src/, no __init__.py -- a plain namespace-style
+  # dir, not part of the raginator.* dotted package). --no-namespace-packages
+  # stops mypy from also treating raginator/<stage>/ (no __init__.py, only a
+  # nested src/) as a content-less namespace package that shadows the real,
+  # properly-installed raginator.<stage> -- the same family of bug as the
+  # python -m / pytest cwd-collision gotchas, just mypy's own variant of it.
+  "$MYPY" --no-namespace-packages api/main.py api/preflight.py api/providers.py api/pipeline_runner.py api/schemas.py
 }
 
 function check() {
@@ -241,6 +259,19 @@ function observe() {
 
   log "❌ Grafana never became ready -- check 'compose logs grafana'."
   return 1
+}
+
+# ---------------------------------------------------------------------------------------
+#  6)                === 🌉 BRIDGE ===
+# ---------------------------------------------------------------------------------------
+function api() {
+  # :8001, not :8000 -- that port's already spoken for by metrics_server's
+  # Prometheus exposition endpoint. Goes through scripts/serve_api.py rather
+  # than `uvicorn api.main:app` directly -- uvicorn's app-string loader
+  # inserts cwd onto sys.path, the same collision class as `python -m`/`-c`,
+  # and the wrapper pre-imports raginator before that happens.
+  log "🌉 Starting the FastAPI bridge on :8001 (Ctrl-C to stop)..."
+  "$PY" scripts/serve_api.py
 }
 
 # -----------------------------

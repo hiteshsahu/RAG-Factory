@@ -57,12 +57,20 @@ export default function ProcessState({ stagesDone, activeStage, failedStage, sta
               </Stack>
             }
           >
-            <AlertTitle sx={{ fontWeight: 600 }}>
-              Stage {failedStage} — {STAGES[failedStage].name} ({STAGES[failedStage].alias}) failed
-            </AlertTitle>
-            <Typography variant="body2" sx={{ fontFamily: '"JetBrains Mono",monospace', fontSize: '0.78rem' }}>
-              {STAGES[failedStage].error}
-            </Typography>
+            {failedStage >= 0 ? (
+              <AlertTitle sx={{ fontWeight: 600 }}>
+                Stage {failedStage} — {STAGES[failedStage].name} ({STAGES[failedStage].alias}) failed
+              </AlertTitle>
+            ) : (
+              <AlertTitle sx={{ fontWeight: 600 }}>Failed before processing started</AlertTitle>
+            )}
+            <Stack spacing={0.5}>
+              {logs.filter(l => l.kind === 'error').map((l, i) => (
+                <Typography key={i} variant="body2" sx={{ fontFamily: '"JetBrains Mono",monospace', fontSize: '0.78rem' }}>
+                  {l.text}
+                </Typography>
+              ))}
+            </Stack>
           </Alert>
         )}
 

@@ -59,9 +59,18 @@ observe = ["prometheus-client>=0.19", "opentelemetry-api>=1.20"]
 # Orchestrator that wires all 9 stages together
 pipeline = []
 
-# Install every stage + the orchestrator
+# FastAPI bridge connecting the frontend to the real pipeline (api/, not a
+# raginator.* subpackage -- a standalone consumer of the library, like scripts/)
+api = [
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.27",
+    "httpx>=0.27",
+    "python-multipart>=0.0.9",
+]
+
+# Install every stage + the orchestrator + the API bridge
 all = [
-    "raginator[core,ingest,chunk,embed,store,retrieve,rerank,generate,evaluate,observe,pipeline]",
+    "raginator[core,ingest,chunk,embed,store,retrieve,rerank,generate,evaluate,observe,pipeline,api]",
 ]
 
 # Dev / CI
@@ -106,7 +115,7 @@ packages = [
 "raginator.pipeline" = "raginator/pipeline/src"
 
 [tool.ruff]
-src = ["raginator"]
+src = ["raginator", "api"]
 line-length = 100
 target-version = "py312"
 
@@ -114,12 +123,18 @@ target-version = "py312"
 select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM"]
 ignore = ["E501"]
 
+# FastAPI's parameter-injection pattern requires `= File(...)`/`= Form(...)`
+# as literal defaults -- that's how it knows to treat the param as a request
+# field, not a mistake to flag.
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["fastapi.File", "fastapi.Form", "fastapi.Depends", "fastapi.Query"]
+
 [tool.mypy]
 python_version = "3.12"
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
-testpaths = ["raginator"]
+testpaths = ["raginator", "api"]
 # Several stages have provider files with the same basename (e.g. mistral.py
 # under both embed/ and rerank/), and none of the tests/ dirs are packages
 # (no __init__.py). importlib mode keys imports by full path instead of a
