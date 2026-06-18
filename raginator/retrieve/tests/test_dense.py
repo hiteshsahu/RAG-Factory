@@ -1,5 +1,5 @@
-from ragfactory.core import Chunk, Embedder, RetrievedChunk, VectorStore
-from ragfactory.retrieve import DenseRetriever
+from raginator.core import Chunk, Embedder, RetrievedChunk, VectorStore
+from raginator.retrieve import DenseRetriever
 
 
 class FakeEmbedder(Embedder):

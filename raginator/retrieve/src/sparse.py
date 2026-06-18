@@ -4,7 +4,7 @@ import math
 import re
 from collections import Counter
 
-from ragfactory.core import Chunk, RetrievedChunk, Retriever
+from raginator.core import Chunk, RetrievedChunk, Retriever
 
 _TOKEN_RE = re.compile(r"\w+")
 

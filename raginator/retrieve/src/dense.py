@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ragfactory.core import Embedder, RetrievedChunk, Retriever, VectorStore
+from raginator.core import Embedder, RetrievedChunk, Retriever, VectorStore
 
 
 class DenseRetriever(Retriever):

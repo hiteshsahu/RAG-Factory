@@ -1,5 +1,5 @@
-from ragfactory.core import Chunk
-from ragfactory.retrieve import SparseRetriever
+from raginator.core import Chunk
+from raginator.retrieve import SparseRetriever
 
 
 def _chunk(chunk_id: str, content: str) -> Chunk:

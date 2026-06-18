@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ragfactory.core import Chunk, RetrievedChunk, Retriever
+from raginator.core import Chunk, RetrievedChunk, Retriever
 
 from .dense import DenseRetriever
 from .sparse import SparseRetriever
