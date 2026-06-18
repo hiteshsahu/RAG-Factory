@@ -1,0 +1,27 @@
+# Local-only observability stack for `./go observe` (works with either
+# `docker compose` or `podman compose`). Grafana has anonymous admin auth
+# enabled so the dashboard opens straight away -- dev convenience, not meant
+# to be reachable outside localhost.
+services:
+  prometheus:
+    image: docker.io/prom/prometheus:latest
+    volumes:
+      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  grafana:
+    image: docker.io/grafana/grafana:latest
+    depends_on:
+      - prometheus
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+    volumes:
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./raginator/observe/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3000:3000"
