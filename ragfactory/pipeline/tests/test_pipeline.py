@@ -6,7 +6,7 @@ from ragfactory.evaluate import KeywordOverlapEvaluator
 from ragfactory.generate import TemplateGenerator
 from ragfactory.ingest import TextFileIngestor
 from ragfactory.observe import LoggingObserver
-from ragfactory.pipeline import Pipeline
+from ragfactory.pipeline import Pipeline, PipelineConfig
 from ragfactory.rerank import IdentityReranker
 from ragfactory.retrieve import DenseRetriever, SparseRetriever
 from ragfactory.store import InMemoryVectorStore
@@ -67,3 +67,28 @@ def test_sparse_retriever_corpus_is_populated_automatically_by_index(tmp_path: P
 
     assert "Raginator" in answer.answer
     assert answer.sources
+
+
+def test_from_config_builds_a_working_default_pipeline(tmp_path: Path):
+    (tmp_path / "doc.txt").write_text("Doofenshmirtz builds the Raginator in his lab.")
+    config = PipelineConfig(
+        source_dir=str(tmp_path), chunk_size=20, chunk_overlap=5, embedding_dim=32, top_k=3
+    )
+
+    pipeline = Pipeline.from_config(config)
+    chunk_count = pipeline.index()
+    assert chunk_count > 0
+
+    answer = pipeline.query("Raginator")
+    assert "Raginator" in answer.answer
+
+
+def test_from_config_top_k_is_the_query_default(tmp_path: Path):
+    (tmp_path / "doc.txt").write_text("a b c d e f g h i j")
+    config = PipelineConfig(source_dir=str(tmp_path), chunk_size=2, chunk_overlap=0, top_k=1)
+
+    pipeline = Pipeline.from_config(config)
+    pipeline.index()
+
+    answer = pipeline.query("a")
+    assert len(answer.sources) <= 1
