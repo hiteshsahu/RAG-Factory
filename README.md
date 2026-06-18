@@ -23,6 +23,12 @@
 ![C++17](https://img.shields.io/badge/C++-17-blue)
 ![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)
 
+
+## See also
+- [Model Gym](https://github.com/HiteshSahu/Model-Gym) — 
+  optimize and benchmark the model that powers your RAG pipeline
+- Raginator — build the pipeline around it
+
 ## RAG PIPELINE
 
 ![](./img/pipeline.jpeg)
@@ -92,18 +98,26 @@ team can own a stage's `ragfactory/<stage>/` folder day to day.
 
 ### `./go` CLI
 
+Open Interactive CLI
+> ./go                      # interactive command menu
+
+
+### Install dependnecies
 ```bash
-./go                      # interactive command menu
 ./go install_tools        # create .venv, upgrade pip
 ./go install              # editable-install ragfactory[dev] (every stage + pytest/ruff/mypy)
 ./go install chunk        # editable-install just ragfactory[chunk]
 ```
+
+### Run Pipeline
 
 ```bash
 ./go dev                  # install everything, then run the toy pipeline once
 ./go demo                 # run the toy pipeline against sample text (no install)
 ```
 
+
+### Test 
 ```bash
 ./go test [stage]         # pytest, across everything or one stage
 ./go lint                 # ruff check
@@ -111,8 +125,13 @@ team can own a stage's `ragfactory/<stage>/` folder day to day.
 ./go check                # lint + typecheck + test
 ```
 
+### Build CPP
 ```bash
-./go build_native [--cuda]  # CMake build ragfactory_native (CPU by default)
+./go build_native         # CMake build ragfactory_native (CPU by default)
+./go build_native --cuda. # CMake build ragfactory_native (CPU by default)
+```
+
+```bash
 ./go clean                # remove .venv, native/build, caches
 ```
 
