@@ -17,6 +17,7 @@ from api.schemas import (
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
+from fastapi.routing import APIRoute
 from raginator.core import StageError
 
 app = FastAPI(title="Raginator bridge")
@@ -38,6 +39,21 @@ _STATE: dict[str, Any] = {"pipeline": None, "settings": None, "corpus_stats": No
 
 def _sse(event: dict[str, Any]) -> str:
     return f"data: {json.dumps(event)}\n\n"
+
+
+@app.get("/")
+async def root() -> dict[str, Any]:
+    """Lists every registered route -- read from app.routes itself (not a
+    hardcoded list) so it can't drift out of sync as endpoints are added."""
+    routes = sorted(
+        (
+            {"path": route.path, "methods": sorted(route.methods)}
+            for route in app.routes
+            if isinstance(route, APIRoute)
+        ),
+        key=lambda r: r["path"],
+    )
+    return {"routes": routes}
 
 
 @app.get("/api/health")

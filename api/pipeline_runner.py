@@ -8,7 +8,7 @@ from typing import Any
 
 from api import providers
 from api.schemas import EMBED_MODELS, CorpusStats, PipelineSettings
-from raginator.core import Chunk
+from raginator.core import Chunk, Generator, RetrievedChunk
 from raginator.evaluate import KeywordOverlapEvaluator
 from raginator.ingest import PDFIngestor, TextFileIngestor
 from raginator.observe import LoggingObserver
@@ -26,6 +26,26 @@ TEXT_LIKE_EXTENSIONS = {".txt", ".md"}
 # We still construct the real provider objects for them here (so a bad API
 # key/model surfaces immediately), we just don't have a query to run yet.
 _WARMUP_STAGES = ((4, "Retriever"), (5, "Reranker"), (6, "Generator"), (7, "Evaluator"))
+
+# Generator.generate() only takes a (query, context) pair -- there's no raw
+# "complete this prompt" method on the interface -- so suggestion generation
+# reuses it by treating the instruction itself as the "query" and a sample of
+# the corpus as "context". A handful of chunks is plenty signal for 3 questions
+# and keeps this cheap regardless of corpus size.
+_SUGGESTION_SAMPLE_SIZE = 6
+_SUGGESTION_PROMPT = (
+    "Suggest exactly 3 short, specific questions a reader could ask about the "
+    "document above. Reply with ONLY the 3 questions, one per line -- no "
+    "numbering, no bullets, no extra commentary."
+)
+
+
+def _suggest_questions(generator: Generator, chunks: list[Chunk]) -> list[str]:
+    sample = chunks[:_SUGGESTION_SAMPLE_SIZE]
+    context = [RetrievedChunk(chunk=c, score=1.0, rank=i) for i, c in enumerate(sample)]
+    answer = generator.generate(_SUGGESTION_PROMPT, context)
+    questions = [line.strip().lstrip("-*•0123456789.) ").strip() for line in answer.answer.splitlines()]
+    return [q for q in questions if q][:3]
 
 
 async def run_pipeline(
@@ -167,7 +187,21 @@ async def run_pipeline(
         state["settings"] = settings
         state["corpus_stats"] = corpus_stats
 
-        yield {"type": "complete", "corpusStats": corpus_stats.model_dump(by_alias=True)}
+        # Best-effort: a flaky suggestion call shouldn't fail an otherwise
+        # successfully indexed corpus -- just fall back to no suggestions
+        # (the UI falls back to its own canned chips when this is empty).
+        suggested_questions: list[str] = []
+        try:
+            yield {"type": "log", "stage": 6, "text": "Generating question suggestions...", "kind": "default"}
+            suggested_questions = _suggest_questions(generator, all_chunks)
+        except Exception as exc:
+            yield {"type": "log", "stage": 6, "text": f"Suggestion generation skipped: {exc}", "kind": "error"}
+
+        yield {
+            "type": "complete",
+            "corpusStats": corpus_stats.model_dump(by_alias=True),
+            "suggestedQuestions": suggested_questions,
+        }
     except Exception as exc:  # belt-and-suspenders: never let the stream die silently
         yield {"type": "error", "stage": -1, "text": f"Unexpected error: {exc}"}
     finally:

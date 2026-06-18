@@ -112,6 +112,10 @@ def test_full_pipeline_run_then_query(monkeypatch, tmp_path):
     assert corpus_stats["chunks"] > 0
     assert corpus_stats["indexSizeBytes"] > 0
 
+    # The chat mock always answers "unused" (single line, no numbering) --
+    # confirms the complete event carries whatever the generator produced.
+    assert events[-1]["suggestedQuestions"] == ["unused"]
+
     stats_response = client.get("/api/corpus/stats")
     assert stats_response.status_code == 200
     assert stats_response.json()["docs"] == 1

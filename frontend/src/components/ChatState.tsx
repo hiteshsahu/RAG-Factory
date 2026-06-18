@@ -31,6 +31,7 @@ interface FullHistoryEntry extends HistoryEntry {
 interface Props {
   corpusName: string
   stats: CorpusStats
+  suggestedQuestions: string[]
   onReset: () => void
 }
 
@@ -44,7 +45,7 @@ const STAT_ITEMS = (stats: CorpusStats) => [
 
 const IS_MAC = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
 
-export default function ChatState({ corpusName, stats, onReset }: Props) {
+export default function ChatState({ corpusName, stats, suggestedQuestions, onReset }: Props) {
   const [messages, setMessages] = useState<Message[]>([])
   const [query, setQuery]       = useState('')
   const [thinking, setThinking] = useState(false)
@@ -117,6 +118,11 @@ export default function ChatState({ corpusName, stats, onReset }: Props) {
     setActiveHistoryId(full.id)
     setHistoryOpen(false)
   }
+
+  // Real, corpus-derived suggestions from the pipeline's "complete" event
+  // when available; otherwise fall back to the canned demo prompts.
+  const hasRealSuggestions = suggestedQuestions.length > 0
+  const questionChips = hasRealSuggestions ? suggestedQuestions : DEMO_QA.map(qa => qa.q)
 
   return (
     <Box sx={{ display: 'flex', height: 'calc(100vh - 48px)' }}>
@@ -252,14 +258,19 @@ export default function ChatState({ corpusName, stats, onReset }: Props) {
       {/* Input area */}
       <Box sx={{ p: 2, borderTop: '0.5px solid rgba(255,255,255,0.08)', bgcolor: 'background.default' }}>
         {messages.length === 0 && (
-          <Stack direction="row" spacing={1} mb={1.5} flexWrap="wrap">
-            {DEMO_QA.map((qa, i) => (
-              <Chip
-                key={i} label={qa.q} size="small" variant="outlined"
-                onClick={() => sendMessage(qa.q)}
-                sx={{ cursor: 'pointer', fontSize: '0.72rem', '&:hover': { bgcolor: 'rgba(29,158,117,0.1)', borderColor: 'rgba(29,158,117,0.4)', color: 'primary.main' } }}
-              />
-            ))}
+          <Stack spacing={0.75} mb={1.5}>
+            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
+              {hasRealSuggestions ? 'Based on your docs, you might ask…' : 'Try asking…'}
+            </Typography>
+            <Stack direction="row" spacing={1} flexWrap="wrap">
+              {questionChips.map((q, i) => (
+                <Chip
+                  key={i} label={q} size="small" variant="outlined"
+                  onClick={() => sendMessage(q)}
+                  sx={{ cursor: 'pointer', fontSize: '0.72rem', '&:hover': { bgcolor: 'rgba(29,158,117,0.1)', borderColor: 'rgba(29,158,117,0.4)', color: 'primary.main' } }}
+                />
+              ))}
+            </Stack>
           </Stack>
         )}
 

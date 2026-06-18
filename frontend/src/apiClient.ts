@@ -12,6 +12,7 @@ export interface PipelineEvent {
   stat?: string
   errors?: string[]
   corpusStats?: CorpusStats
+  suggestedQuestions?: string[]
 }
 
 /** POSTs the dropped files + settings to /api/pipeline/start and yields each

@@ -112,10 +112,17 @@ Open Interactive CLI
 
 ### Run Pipeline
 
+Start React Frontend
 ```bash
-./go dev                  # install everything, then run the toy pipeline once
-./go demo                 # run the toy pipeline against sample text (no install)
+./go dev                  # Start UI
+````
+- Backend start at: [**http://127.0.0.1:8001/**](http://127.0.0.1:8001/)
+
+Start Python Backend + RAG Pipeline
+```bash
+./go api                  # Start backend (RAG + Bridge)
 ```
+- GUI start at: [**http://localhost:5173/**](http://localhost:5173/)
 
 The pipeline runs end-to-end with pure-Python/numpy defaults (no GPU, no
 model downloads). 

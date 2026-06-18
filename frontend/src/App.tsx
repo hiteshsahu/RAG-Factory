@@ -39,6 +39,7 @@ export default function App() {
   const [logs, setLogs]             = useState<LogLine[]>([])
   const [stageStats, setStageStats] = useState<Record<number, string>>({})
   const [corpusStats, setCorpusStats] = useState<CorpusStats | null>(null)
+  const [suggestedQuestions, setSuggestedQuestions] = useState<string[]>([])
   const [corpusName, setCorpusName] = useState('')
   const [settings, setSettings] = useState<PipelineSettings>(DEFAULT_SETTINGS)
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -62,6 +63,7 @@ export default function App() {
     setLogs([])
     setStageStats({})
     setCorpusStats(null)
+    setSuggestedQuestions([])
 
     if (files.length === 0) {
       // The bridge only ingests real files -- WebIngestor/GitHubIngestor
@@ -107,6 +109,7 @@ export default function App() {
           case 'complete':
             addLog('Pipeline complete.', 'success')
             if (event.corpusStats) setCorpusStats(event.corpusStats)
+            if (event.suggestedQuestions) setSuggestedQuestions(event.suggestedQuestions)
             await sleep(500)
             setAppState('chat')
             return
@@ -132,6 +135,7 @@ export default function App() {
     setLogs([])
     setStageStats({})
     setCorpusStats(null)
+    setSuggestedQuestions([])
   }
 
   const statusLabel = appState === 'process'
@@ -193,6 +197,7 @@ export default function App() {
           <ChatState
             corpusName={corpusName}
             stats={corpusStats ?? FALLBACK_CORPUS_STATS}
+            suggestedQuestions={suggestedQuestions}
             onReset={handleReset}
           />
         )}
