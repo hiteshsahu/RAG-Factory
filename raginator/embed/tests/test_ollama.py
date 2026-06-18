@@ -1,6 +1,6 @@
 from unittest.mock import Mock, patch
 
-from ragfactory.embed import OllamaEmbedder
+from raginator.embed import OllamaEmbedder
 
 
 def test_embed_texts_calls_local_ollama_server():
@@ -8,7 +8,7 @@ def test_embed_texts_calls_local_ollama_server():
     response.raise_for_status = Mock()
     response.json.return_value = {"embedding": [0.7, 0.8]}
 
-    with patch("ragfactory.embed.ollama.requests.post", return_value=response) as mock_post:
+    with patch("raginator.embed.ollama.requests.post", return_value=response) as mock_post:
         vectors = OllamaEmbedder().embed_texts(["hello"])
 
     assert vectors == [[0.7, 0.8]]
@@ -22,7 +22,7 @@ def test_custom_base_url_is_respected():
     response.raise_for_status = Mock()
     response.json.return_value = {"embedding": [0.1]}
 
-    with patch("ragfactory.embed.ollama.requests.post", return_value=response) as mock_post:
+    with patch("raginator.embed.ollama.requests.post", return_value=response) as mock_post:
         OllamaEmbedder(base_url="http://example.com:11434/").embed_texts(["x"])
 
     args, _ = mock_post.call_args

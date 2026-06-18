@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import requests
-from ragfactory.core import Embedder, Settings, StageError
+from raginator.core import Embedder, Settings, StageError
 
 MISTRAL_API_URL = "https://api.mistral.ai/v1/embeddings"
 
@@ -24,7 +24,7 @@ class MistralEmbedder(Embedder):
     def embed_texts(self, texts: list[str]) -> list[list[float]]:
         if not self._api_key:
             raise StageError(
-                "embed", "Mistral API key not set (pass api_key= or set RAGFACTORY_MISTRAL_API_KEY)"
+                "embed", "Mistral API key not set (pass api_key= or set RAGINATOR_MISTRAL_API_KEY)"
             )
 
         response = requests.post(

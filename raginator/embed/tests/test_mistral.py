@@ -1,8 +1,8 @@
 from unittest.mock import Mock, patch
 
 import pytest
-from ragfactory.core import StageError
-from ragfactory.embed import MistralEmbedder
+from raginator.core import StageError
+from raginator.embed import MistralEmbedder
 
 
 def test_embed_texts_calls_mistral_api():
@@ -10,7 +10,7 @@ def test_embed_texts_calls_mistral_api():
     response.raise_for_status = Mock()
     response.json.return_value = {"data": [{"embedding": [0.1, 0.2]}, {"embedding": [0.3, 0.4]}]}
 
-    with patch("ragfactory.embed.mistral.requests.post", return_value=response) as mock_post:
+    with patch("raginator.embed.mistral.requests.post", return_value=response) as mock_post:
         vectors = MistralEmbedder(api_key="test-key").embed_texts(["a", "b"])
 
     assert vectors == [[0.1, 0.2], [0.3, 0.4]]
@@ -20,7 +20,7 @@ def test_embed_texts_calls_mistral_api():
 
 
 def test_missing_api_key_raises_stage_error(monkeypatch):
-    monkeypatch.delenv("RAGFACTORY_MISTRAL_API_KEY", raising=False)
+    monkeypatch.delenv("RAGINATOR_MISTRAL_API_KEY", raising=False)
 
     with pytest.raises(StageError):
         MistralEmbedder().embed_texts(["a"])

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import requests
-from ragfactory.core import Embedder, Settings, StageError
+from raginator.core import Embedder, Settings, StageError
 
 HUGGINGFACE_API_URL = "https://api-inference.huggingface.co/models/{model}"
 
@@ -25,7 +25,7 @@ class HuggingFaceEmbedder(Embedder):
         if not self._api_key:
             raise StageError(
                 "embed",
-                "HuggingFace API key not set (pass api_key= or set RAGFACTORY_HUGGINGFACE_API_KEY)",
+                "HuggingFace API key not set (pass api_key= or set RAGINATOR_HUGGINGFACE_API_KEY)",
             )
 
         response = requests.post(

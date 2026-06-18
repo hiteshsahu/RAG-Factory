@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import requests
-from ragfactory.core import Embedder, Settings, StageError
+from raginator.core import Embedder, Settings, StageError
 
 OPENAI_API_URL = "https://api.openai.com/v1/embeddings"
 
@@ -24,7 +24,7 @@ class OpenAIEmbedder(Embedder):
     def embed_texts(self, texts: list[str]) -> list[list[float]]:
         if not self._api_key:
             raise StageError(
-                "embed", "OpenAI API key not set (pass api_key= or set RAGFACTORY_OPENAI_API_KEY)"
+                "embed", "OpenAI API key not set (pass api_key= or set RAGINATOR_OPENAI_API_KEY)"
             )
 
         response = requests.post(

@@ -1,8 +1,8 @@
 from unittest.mock import Mock, patch
 
 import pytest
-from ragfactory.core import StageError
-from ragfactory.embed import HuggingFaceEmbedder
+from raginator.core import StageError
+from raginator.embed import HuggingFaceEmbedder
 
 
 def test_embed_texts_calls_huggingface_api():
@@ -10,7 +10,7 @@ def test_embed_texts_calls_huggingface_api():
     response.raise_for_status = Mock()
     response.json.return_value = [[0.1, 0.2], [0.3, 0.4]]
 
-    with patch("ragfactory.embed.huggingface.requests.post", return_value=response) as mock_post:
+    with patch("raginator.embed.huggingface.requests.post", return_value=response) as mock_post:
         vectors = HuggingFaceEmbedder(api_key="test-key").embed_texts(["a", "b"])
 
     assert vectors == [[0.1, 0.2], [0.3, 0.4]]
@@ -20,7 +20,7 @@ def test_embed_texts_calls_huggingface_api():
 
 
 def test_missing_api_key_raises_stage_error(monkeypatch):
-    monkeypatch.delenv("RAGFACTORY_HUGGINGFACE_API_KEY", raising=False)
+    monkeypatch.delenv("RAGINATOR_HUGGINGFACE_API_KEY", raising=False)
 
     with pytest.raises(StageError):
         HuggingFaceEmbedder().embed_texts(["a"])

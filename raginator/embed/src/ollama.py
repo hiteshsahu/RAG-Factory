@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import requests
-from ragfactory.core import Embedder, Settings
+from raginator.core import Embedder, Settings
 
 OLLAMA_EMBEDDINGS_PATH = "/api/embeddings"
 

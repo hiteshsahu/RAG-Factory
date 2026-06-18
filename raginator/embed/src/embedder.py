@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 
 import numpy as np
-from ragfactory.core import Embedder
+from raginator.core import Embedder
 
 
 class HashingEmbedder(Embedder):

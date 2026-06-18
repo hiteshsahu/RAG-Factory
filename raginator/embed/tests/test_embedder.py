@@ -1,6 +1,6 @@
 import numpy as np
-from ragfactory.core import Chunk
-from ragfactory.embed import HashingEmbedder
+from raginator.core import Chunk
+from raginator.embed import HashingEmbedder
 
 
 def test_embed_is_deterministic_and_normalized():
