@@ -4,7 +4,7 @@ import json
 from typing import Any
 
 import psycopg
-from ragfactory.core import Chunk, EmbeddedChunk, RetrievedChunk, Settings, StageError, VectorStore
+from raginator.core import Chunk, EmbeddedChunk, RetrievedChunk, Settings, StageError, VectorStore
 
 
 class PgVectorStore(VectorStore):
@@ -13,7 +13,7 @@ class PgVectorStore(VectorStore):
     def __init__(
         self,
         dsn: str | None = None,
-        table: str = "ragfactory_chunks",
+        table: str = "raginator_chunks",
         dimension: int = 256,
         connection: Any | None = None,
     ) -> None:
@@ -26,7 +26,7 @@ class PgVectorStore(VectorStore):
             resolved_dsn = dsn if dsn is not None else Settings().postgres_dsn
             if not resolved_dsn:
                 raise StageError(
-                    "store", "Postgres DSN not set (pass dsn= or set RAGFACTORY_POSTGRES_DSN)"
+                    "store", "Postgres DSN not set (pass dsn= or set RAGINATOR_POSTGRES_DSN)"
                 )
             self._connection = psycopg.connect(resolved_dsn)
         self._ensure_table()

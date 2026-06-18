@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 import chromadb
-from ragfactory.core import Chunk, EmbeddedChunk, RetrievedChunk, VectorStore
+from raginator.core import Chunk, EmbeddedChunk, RetrievedChunk, VectorStore
 
 
 class ChromaVectorStore(VectorStore):
@@ -15,7 +15,7 @@ class ChromaVectorStore(VectorStore):
 
     def __init__(
         self,
-        collection_name: str = "ragfactory",
+        collection_name: str = "raginator",
         persist_directory: str | None = None,
         client: Any | None = None,
     ) -> None:

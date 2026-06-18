@@ -1,6 +1,6 @@
 import chromadb
-from ragfactory.core import Chunk, EmbeddedChunk
-from ragfactory.store import ChromaVectorStore
+from raginator.core import Chunk, EmbeddedChunk
+from raginator.store import ChromaVectorStore
 
 
 def _embedded(chunk_id: str, vector: list[float]) -> EmbeddedChunk:

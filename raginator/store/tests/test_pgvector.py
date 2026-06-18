@@ -4,8 +4,8 @@ import json
 import math
 from typing import Any
 
-from ragfactory.core import Chunk, EmbeddedChunk
-from ragfactory.store import PgVectorStore
+from raginator.core import Chunk, EmbeddedChunk
+from raginator.store import PgVectorStore
 
 
 def _cosine_similarity(a: list[float], b: list[float]) -> float:

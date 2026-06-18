@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import numpy as np
-from ragfactory.core import EmbeddedChunk, RetrievedChunk, VectorStore
+from raginator.core import EmbeddedChunk, RetrievedChunk, VectorStore
 
 try:
-    import ragfactory_native as _native
+    import raginator_native as _native
 except ImportError:
     _native = None
 

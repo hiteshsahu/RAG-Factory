@@ -1,8 +1,8 @@
 from typing import Any
 
 import pytest
-from ragfactory.core import Chunk, EmbeddedChunk, StageError
-from ragfactory.store import PineconeVectorStore
+from raginator.core import Chunk, EmbeddedChunk, StageError
+from raginator.store import PineconeVectorStore
 
 
 class FakeIndex:
@@ -36,7 +36,7 @@ def test_pinecone_store_add_and_search_roundtrip():
 
 
 def test_missing_api_key_raises_stage_error(monkeypatch):
-    monkeypatch.delenv("RAGFACTORY_PINECONE_API_KEY", raising=False)
+    monkeypatch.delenv("RAGINATOR_PINECONE_API_KEY", raising=False)
 
     with pytest.raises(StageError):
         PineconeVectorStore(index_name="test")

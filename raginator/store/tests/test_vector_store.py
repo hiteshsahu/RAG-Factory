@@ -1,5 +1,5 @@
-from ragfactory.core import Chunk, EmbeddedChunk
-from ragfactory.store import InMemoryVectorStore
+from raginator.core import Chunk, EmbeddedChunk
+from raginator.store import InMemoryVectorStore
 
 
 def _embedded(chunk_id: str, vector: list[float]) -> EmbeddedChunk:

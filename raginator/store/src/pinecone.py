@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from pinecone import Pinecone
-from ragfactory.core import Chunk, EmbeddedChunk, RetrievedChunk, Settings, StageError, VectorStore
+from raginator.core import Chunk, EmbeddedChunk, RetrievedChunk, Settings, StageError, VectorStore
 
 
 class PineconeVectorStore(VectorStore):
@@ -23,7 +23,7 @@ class PineconeVectorStore(VectorStore):
         resolved_key = api_key if api_key is not None else Settings().pinecone_api_key
         if not resolved_key:
             raise StageError(
-                "store", "Pinecone API key not set (pass api_key= or set RAGFACTORY_PINECONE_API_KEY)"
+                "store", "Pinecone API key not set (pass api_key= or set RAGINATOR_PINECONE_API_KEY)"
             )
         self._index = Pinecone(api_key=resolved_key).Index(index_name)
 
