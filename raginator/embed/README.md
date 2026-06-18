@@ -31,6 +31,27 @@ embedding (Stage 4) calls `embed_texts()` directly since a query isn't a `Chunk`
 raise `StageError`. `base_url=None` on `OllamaEmbedder` falls back to
 `RAGINATOR_OLLAMA_BASE_URL` (default `http://localhost:11434`).
 
+## Running Ollama locally
+
+`OllamaEmbedder` needs a running Ollama server with the embedding model
+already pulled -- it doesn't pull models on demand, so a missing model fails
+with a `404 Not Found` on `/api/embeddings`, not a clear "model missing"
+error.
+
+```bash
+brew install ollama          # or download from https://ollama.com
+ollama serve                 # starts the server on :11434 (skip if already running)
+ollama pull nomic-embed-text # default model OllamaEmbedder expects
+ollama list                  # confirm it's there
+```
+
+If you're also using `OllamaGenerator` (Stage 6) against the same server,
+pull its model too (default `llama3.2`):
+
+```bash
+ollama pull llama3.2
+```
+
 ## Usage
 
 ```python
