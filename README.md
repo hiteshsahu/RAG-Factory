@@ -35,19 +35,19 @@
 
 ### Stages
 
-| Stage | Normal Name       | Raginator Name             | Job                                              |
-|-------|-------------------|----------------------------|--------------------------------------------------|
-| 0     | Ingest 📚         | **The Suck-Inator**        | Vacuums up PDFs, websites, docs, and APIs.       |
-| 1     | Chunk 📑          | **The Chunk-Inator**       | Slices knowledge into chunks.                    |
-| 2     | Embed 🔢          | **The Embed-Inator**       | Converts chunks into embeddings.                 |
-| 3     | Store / Index ↗️  | **The Store-Inator**       | Stores everything for future evil use.           |
-| 4     | Retrieve 🐕         | **The Find-Inator**        | Retrieves relevant context.                      |
-| 5     | Rerank 🔀           | **The Better-Find-Inator** | Decides which context is actually useful.        |
-| 6     | Generate 🧠         | **The Answer-Inator**      | Generates a response.                            |
-| 7     | Evaluate 📋         | **The Evaluate-Inator**    | judges its own work.                             |
-| 8     | Observe 📊          | **The Observe-Inator**     | Monitors the entire operation from headquarters. |
-
-
+| Stage              | Path                   | GPU Required | Details |
+|--------------------|------------------------|--------------|---------|
+| **0 — Ingest 📚**    | `raginator/ingest/`    | No           | [README](raginator/ingest/README.md) — TextFile, PDF, Web, GitHub, S3 |
+| **1 — Chunk 📑**     | `raginator/chunk/`     | No           | [README](raginator/chunk/README.md) — Fixed, Recursive, Semantic, Code |
+| **2 — Embed 🔢**     | `raginator/embed/`     | No           | [README](raginator/embed/README.md) — Hashing, Mistral, OpenAI, HuggingFace, Ollama |
+| **3 — Store ↗️**     | `raginator/store/`     | Optional     | [README](raginator/store/README.md) — InMemory (+native C++/CUDA), Chroma, pgvector, Pinecone |
+| **4 — Retrieve 🐕**  | `raginator/retrieve/`  | No           | [README](raginator/retrieve/README.md) — Dense, Sparse (BM25), Hybrid |
+| **5 — Rerank 🔀**    | `raginator/rerank/`    | No           | [README](raginator/rerank/README.md) — Identity, Cross-Encoder, Mistral |
+| **6 — Generate 🧠**  | `raginator/generate/`  | No           | [README](raginator/generate/README.md) — Template, Mistral, OpenAI, Ollama |
+| **7 — Evaluate 📋**  | `raginator/evaluate/`  | No           | [README](raginator/evaluate/README.md) — Keyword overlap, Retrieval metrics, Generation scores, Cost, Report |
+| **8 — Observe 📊**   | `raginator/observe/`   | No           | [README](raginator/observe/README.md) — Logging, Prometheus, OpenTelemetry, Structured JSON |
+| **Core 🧩**          | `raginator/core/`      | No           | [README](raginator/core/README.md) — shared interfaces, types, settings |
+| **Pipeline 🎛️**      | `raginator/pipeline/`  | No           | [README](raginator/pipeline/README.md) — orchestrator, PipelineConfig |
 
 ---
 
@@ -68,12 +68,6 @@ RAG-Factory/
 │   ├── evaluate/                # Stage 7, The Evaluate-Inator
 │   ├── observe/                 # Stage 8, The Observe-Inator
 │   └── pipeline/                # orchestrator wiring all 9 stages together
-│       (each raginator/<stage>/ has a flat src/ — no redundant nested
-│        raginator/<stage>/ folder inside it — plus its own tests/. The
-│        single root pyproject.toml maps each dotted import name to its
-│        stage's src/ directly, e.g.:
-│          [tool.setuptools.package-dir]
-│          "raginator.chunk" = "raginator/chunk/src")
 ├── native/                      # optional C++/CUDA acceleration (own CMake build)
 │   ├── CMakeLists.txt           # USE_CUDA=OFF by default (builds CPU-only)
 │   ├── include/similarity.hpp
