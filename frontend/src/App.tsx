@@ -9,6 +9,7 @@ import DarkModeIcon from '@mui/icons-material/DarkMode'
 import getTheme from './theme'
 import { DEFAULT_SETTINGS, EMBED_MODELS, type CorpusStats, type PipelineSettings } from './data'
 import { streamPipelineStart } from './apiClient'
+import { useLocalStorage } from './hooks/useLocalStorage'
 import DropState from './components/DropState'
 import ProcessState from './components/ProcessState'
 import ChatState from './components/ChatState'
@@ -27,7 +28,7 @@ const PREFLIGHT_STAGE = -1
 
 const FALLBACK_CORPUS_STATS: CorpusStats = {
   docs: 0, chunks: 0, avgChunkTokens: 0,
-  embeddingModel: `${EMBED_MODELS.Mistral.name} · ${EMBED_MODELS.Mistral.dim}-dim`,
+  embeddingModel: `${EMBED_MODELS.Ollama.name} · ${EMBED_MODELS.Ollama.dim}-dim`,
   indexSizeBytes: 0,
 }
 
@@ -41,7 +42,7 @@ export default function App() {
   const [corpusStats, setCorpusStats] = useState<CorpusStats | null>(null)
   const [suggestedQuestions, setSuggestedQuestions] = useState<string[]>([])
   const [corpusName, setCorpusName] = useState('')
-  const [settings, setSettings] = useState<PipelineSettings>(DEFAULT_SETTINGS)
+  const [settings, setSettings] = useLocalStorage<PipelineSettings>('raginator:settings', DEFAULT_SETTINGS)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [mode, setMode] = useState<PaletteMode>('dark')
   const theme = useMemo(() => getTheme(mode), [mode])
@@ -177,39 +178,44 @@ export default function App() {
           </Toolbar>
         </AppBar>
 
-        {appState === 'drop' && (
-          <DropState onStart={runPipeline} settings={settings} onOpenSettings={() => setSettingsOpen(true)} />
-        )}
+        <Box sx={{ display: 'flex', minHeight: 'calc(100vh - 48px)' }}>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            {appState === 'drop' && (
+              <DropState onStart={runPipeline} settings={settings} onOpenSettings={() => setSettingsOpen(true)} />
+            )}
 
-        {appState === 'process' && (
-          <ProcessState
-            stagesDone={stagesDone}
-            activeStage={activeStage}
-            failedStage={failedStage}
-            stageStats={stageStats}
-            logs={logs}
-            onRetry={handleRetry}
-            onReset={handleReset}
-          />
-        )}
+            {appState === 'process' && (
+              <ProcessState
+                stagesDone={stagesDone}
+                activeStage={activeStage}
+                failedStage={failedStage}
+                stageStats={stageStats}
+                logs={logs}
+                onRetry={handleRetry}
+                onReset={handleReset}
+              />
+            )}
 
-        {appState === 'chat' && (
-          <ChatState
-            corpusName={corpusName}
-            stats={corpusStats ?? FALLBACK_CORPUS_STATS}
-            suggestedQuestions={suggestedQuestions}
-            onReset={handleReset}
+            {appState === 'chat' && (
+              <ChatState
+                corpusName={corpusName}
+                stats={corpusStats ?? FALLBACK_CORPUS_STATS}
+                suggestedQuestions={suggestedQuestions}
+                onReset={handleReset}
+              />
+            )}
+          </Box>
+
+          <SettingsDrawer
+            open={settingsOpen}
+            settings={settings}
+            onChange={setSettings}
+            onClose={() => setSettingsOpen(false)}
+            onOpen={() => setSettingsOpen(true)}
           />
-        )}
+        </Box>
 
       </Box>
-
-      <SettingsDrawer
-        open={settingsOpen}
-        settings={settings}
-        onChange={setSettings}
-        onClose={() => setSettingsOpen(false)}
-      />
     </ThemeProvider>
   )
 }
