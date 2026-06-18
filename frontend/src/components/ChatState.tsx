@@ -1,10 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react'
 import {
   Box, Button, Chip, CircularProgress,
-  IconButton, Paper, Stack, TextField, Typography,
+  IconButton, Paper, Stack, TextField, Tooltip, Typography,
 } from '@mui/material'
 import SendIcon from '@mui/icons-material/Send'
 import ManageSearchIcon from '@mui/icons-material/ManageSearch'
+import ContentCopyIcon from '@mui/icons-material/ContentCopy'
+import CheckIcon from '@mui/icons-material/Check'
 import { DEMO_QA, DemoAnswer } from '../data'
 
 interface Message {
@@ -27,7 +29,14 @@ export default function ChatState({ corpusName, onReset }: Props) {
   const [messages, setMessages] = useState<Message[]>([])
   const [query, setQuery]       = useState('')
   const [thinking, setThinking] = useState(false)
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null)
   const chatRef = useRef<HTMLDivElement>(null)
+
+  const copyMessage = (text: string, index: number) => {
+    navigator.clipboard.writeText(text)
+    setCopiedIndex(index)
+    setTimeout(() => setCopiedIndex(null), 1500)
+  }
 
   useEffect(() => {
     if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight
@@ -84,11 +93,26 @@ export default function ChatState({ corpusName, onReset }: Props) {
                 bgcolor: m.role === 'user' ? 'primary.main' : 'background.paper',
                 borderRadius: m.role === 'user' ? '12px 12px 3px 12px' : '12px 12px 12px 3px',
                 border: m.role === 'user' ? 'none' : '0.5px solid rgba(255,255,255,0.1)',
+                position: 'relative',
+                '&:hover .copy-btn': { opacity: 1 },
               }}
             >
               <Typography variant="body2" sx={{ color: m.role === 'user' ? '#fff' : 'text.primary', lineHeight: 1.7 }}>
                 {m.text}
               </Typography>
+
+              {m.role === 'bot' && (
+                <Tooltip title={copiedIndex === i ? 'Copied!' : 'Copy answer'}>
+                  <IconButton
+                    className="copy-btn"
+                    size="small"
+                    onClick={() => copyMessage(m.text, i)}
+                    sx={{ position: 'absolute', top: 4, right: 4, opacity: 0, transition: 'opacity .15s', color: 'text.secondary' }}
+                  >
+                    {copiedIndex === i ? <CheckIcon sx={{ fontSize: 14, color: 'primary.main' }} /> : <ContentCopyIcon sx={{ fontSize: 14 }} />}
+                  </IconButton>
+                </Tooltip>
+              )}
             </Paper>
 
             {m.role === 'bot' && m.sources && (
