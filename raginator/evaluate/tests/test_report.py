@@ -1,8 +1,8 @@
 import json
 from pathlib import Path
 
-from ragfactory.core import GeneratedAnswer
-from ragfactory.evaluate import EvaluationRecord, GenerationScores, to_html, to_json, write_report
+from raginator.core import GeneratedAnswer
+from raginator.evaluate import EvaluationRecord, GenerationScores, to_html, to_json, write_report
 
 
 def _record() -> EvaluationRecord:

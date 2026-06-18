@@ -1,8 +1,8 @@
 from unittest.mock import Mock, patch
 
 import pytest
-from ragfactory.core import Chunk, GeneratedAnswer, RetrievedChunk, StageError
-from ragfactory.evaluate import GenerationEvaluator, heuristic_generation_scores, llm_judge_scores
+from raginator.core import Chunk, GeneratedAnswer, RetrievedChunk, StageError
+from raginator.evaluate import GenerationEvaluator, heuristic_generation_scores, llm_judge_scores
 
 
 def _context(text: str) -> RetrievedChunk:
@@ -43,7 +43,7 @@ def test_llm_judge_parses_json_response():
         "choices": [{"message": {"content": '{"faithfulness": 0.8, "relevance": 0.6}'}}]
     }
 
-    with patch("ragfactory.evaluate.generation.requests.post", return_value=response):
+    with patch("raginator.evaluate.generation.requests.post", return_value=response):
         scores = llm_judge_scores(
             "q", GeneratedAnswer(answer="a", sources=[]), [], api_key="test-key"
         )
@@ -53,7 +53,7 @@ def test_llm_judge_parses_json_response():
 
 
 def test_llm_judge_missing_api_key_raises_stage_error(monkeypatch):
-    monkeypatch.delenv("RAGFACTORY_MISTRAL_API_KEY", raising=False)
+    monkeypatch.delenv("RAGINATOR_MISTRAL_API_KEY", raising=False)
 
     with pytest.raises(StageError):
         llm_judge_scores("q", GeneratedAnswer(answer="a", sources=[]), [])

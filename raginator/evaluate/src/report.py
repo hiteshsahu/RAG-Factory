@@ -6,7 +6,7 @@ from html import escape
 from pathlib import Path
 from typing import Any
 
-from ragfactory.core import GeneratedAnswer
+from raginator.core import GeneratedAnswer
 
 from .generation import GenerationScores
 

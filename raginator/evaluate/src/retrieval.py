@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ragfactory.core import RetrievedChunk
+from raginator.core import RetrievedChunk
 
 
 def precision_at_k(retrieved: list[RetrievedChunk], relevant_ids: set[str], k: int) -> float:

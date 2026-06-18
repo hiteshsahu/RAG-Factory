@@ -1,5 +1,5 @@
-from ragfactory.core import GeneratedAnswer
-from ragfactory.evaluate import KeywordOverlapEvaluator
+from raginator.core import GeneratedAnswer
+from raginator.evaluate import KeywordOverlapEvaluator
 
 
 def test_full_keyword_overlap_scores_one():

@@ -1,6 +1,6 @@
 import pytest
-from ragfactory.core import GeneratedAnswer, StageError
-from ragfactory.evaluate import cost_per_million_tokens, cost_per_query
+from raginator.core import GeneratedAnswer, StageError
+from raginator.evaluate import cost_per_million_tokens, cost_per_query
 
 
 def test_cost_per_query_uses_pricing_table():

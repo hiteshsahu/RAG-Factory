@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ragfactory.core import GeneratedAnswer, StageError
+from raginator.core import GeneratedAnswer, StageError
 
 # Snapshot pricing, USD per 1M tokens (blended; doesn't distinguish input vs.
 # output pricing). Verify against each provider's current pricing page before

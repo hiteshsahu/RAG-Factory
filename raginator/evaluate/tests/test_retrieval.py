@@ -1,5 +1,5 @@
-from ragfactory.core import Chunk, RetrievedChunk
-from ragfactory.evaluate import mean_reciprocal_rank, precision_at_k, recall_at_k, retrieval_metrics
+from raginator.core import Chunk, RetrievedChunk
+from raginator.evaluate import mean_reciprocal_rank, precision_at_k, recall_at_k, retrieval_metrics
 
 
 def _retrieved(*chunk_ids: str) -> list[RetrievedChunk]:

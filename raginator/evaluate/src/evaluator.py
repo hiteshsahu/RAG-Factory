@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ragfactory.core import Evaluator, GeneratedAnswer, RetrievedChunk
+from raginator.core import Evaluator, GeneratedAnswer, RetrievedChunk
 
 
 class KeywordOverlapEvaluator(Evaluator):

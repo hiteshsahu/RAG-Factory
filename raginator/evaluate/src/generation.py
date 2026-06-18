@@ -4,7 +4,7 @@ import json
 from dataclasses import dataclass
 
 import requests
-from ragfactory.core import Evaluator, GeneratedAnswer, RetrievedChunk, Settings, StageError
+from raginator.core import Evaluator, GeneratedAnswer, RetrievedChunk, Settings, StageError
 
 MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions"
 
@@ -56,7 +56,7 @@ def llm_judge_scores(
     resolved_key = api_key if api_key is not None else Settings().mistral_api_key
     if not resolved_key:
         raise StageError(
-            "evaluate", "Mistral API key not set (pass api_key= or set RAGFACTORY_MISTRAL_API_KEY)"
+            "evaluate", "Mistral API key not set (pass api_key= or set RAGINATOR_MISTRAL_API_KEY)"
         )
 
     joined_context = "\n---\n".join(candidate.chunk.content for candidate in context)
