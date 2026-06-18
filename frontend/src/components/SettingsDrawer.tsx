@@ -121,7 +121,22 @@ export default function SettingsDrawer({ open, settings, onChange, onClose, onOp
                     fullWidth
                     value={settings[section.key]}
                     onChange={(_, value) => setValue(section.key, value)}
-                    sx={{ flexWrap: 'wrap' }}
+                    sx={{
+                      flexWrap: 'wrap',
+                      gap: 0.75,
+                      // ToggleButtonGroup's segmented-control CSS only rounds
+                      // the literal first/last child in the DOM -- fine for a
+                      // single row, but with flexWrap (4 options don't fit on
+                      // one line at this width) every wrapped-row edge button
+                      // was left square. Give each button its own full radius
+                      // and border instead of relying on that DOM-order logic.
+                      '& .MuiToggleButtonGroup-grouped': {
+                        margin: 0,
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        borderRadius: '8px !important',
+                      },
+                    }}
                   >
                     {section.options.map(opt => (
                       <ToggleButton key={opt} value={opt} sx={{ textTransform: 'none', flex: '1 0 auto' }}>

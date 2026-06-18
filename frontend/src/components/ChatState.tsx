@@ -172,7 +172,11 @@ export default function ChatState({
                     variant="outlined"
                     onClick={() => setPreviewSource(s)}
                     sx={{
-                      bgcolor: 'rgba(127,119,221,0.12)', color: '#AFA9EC', borderColor: 'rgba(127,119,221,0.3)',
+                      bgcolor: 'rgba(127,119,221,0.12)', borderColor: 'rgba(127,119,221,0.3)',
+                      // #AFA9EC (light lavender) reads fine on dark paper but
+                      // is too washed-out on light mode's near-white paper --
+                      // swap to a darker purple there for actual contrast.
+                      color: theme => (theme.palette.mode === 'dark' ? '#AFA9EC' : '#4F46C2'),
                       fontSize: '0.67rem', height: 20, cursor: 'pointer',
                       '&:hover': { bgcolor: 'rgba(127,119,221,0.22)' },
                     }}
