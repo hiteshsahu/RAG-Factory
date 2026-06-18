@@ -12,10 +12,25 @@ PIP="$VENV_DIR/bin/pip"
 PYTEST="$VENV_DIR/bin/pytest"
 RUFF="$VENV_DIR/bin/ruff"
 MYPY="$VENV_DIR/bin/mypy"
+DASHBOARD_URL="http://localhost:3000/d/raginator-3000/raginator-3000"
 
 cd "$ROOT_DIR"
 
 log() { echo -e "$@"; }
+
+# Prefer `docker compose`, fall back to `podman compose` -- the
+# docker-compose.yml is plain Compose v2 syntax, both providers consume it
+# the same way.
+compose() {
+  if command -v docker &>/dev/null; then
+    docker compose "$@"
+  elif command -v podman &>/dev/null; then
+    podman compose "$@"
+  else
+    log "❌ Neither docker nor podman found -- install one to run ./go observe."
+    return 1
+  fi
+}
 
 # -----------------------------
 # HELP / HINT (Interactive)
@@ -30,6 +45,7 @@ Commands:
 === 2. 🧪 TESTING AND ANALYSIS   ===
 === 3. ⚡ NATIVE ACCELERATION    ===
 === 4. 🧹 CLEANUP                ===
+=== 5. 📈 OBSERVABILITY          ===
 
 Enter a number to see details:
 HEREDOC
@@ -41,8 +57,8 @@ case ${option} in
   0)
     echo "=== 🛠 PREREQUISITES ==="
     echo "⚙️  install_tools     -- Create .venv and upgrade pip"
-    echo "📦  install           -- Editable-install ragfactory[dev] (every stage + pytest/ruff/mypy)"
-    echo "📦  install <stage>   -- Editable-install just ragfactory[<stage>], e.g. ./go install chunk"
+    echo "📦  install           -- Editable-install raginator[dev] (every stage + pytest/ruff/mypy)"
+    echo "📦  install <stage>   -- Editable-install just raginator[<stage>], e.g. ./go install chunk"
     ;;
 
   1)
@@ -62,12 +78,18 @@ case ${option} in
 
   3)
     echo "=== ⚡ NATIVE ACCELERATION ==="
-    echo "🛠  build_native [--cuda]   -- CMake build ragfactory_native (CPU by default)"
+    echo "🛠  build_native [--cuda]   -- CMake build raginator_native (CPU by default)"
     ;;
 
   4)
     echo "=== 🧹 CLEANUP ==="
     echo "🧹  clean             -- Remove .venv, native/build, __pycache__, egg-info, caches"
+    ;;
+
+  5)
+    echo "=== 📈 OBSERVABILITY ==="
+    echo "📈  metrics_server    -- Run the toy pipeline on a loop, exposing :8000/metrics"
+    echo "📊  observe           -- docker/podman compose up Prometheus+Grafana, open the dashboard"
     ;;
   *)
     echo "Section $option does not exist"
@@ -92,12 +114,12 @@ function install() {
 
   local stage="${1:-}"
   if [ -n "$stage" ]; then
-    log "📦 Installing ragfactory[$stage]..."
+    log "📦 Installing raginator[$stage]..."
     "$PIP" install -e ".[$stage]"
     return
   fi
 
-  log "📦 Installing ragfactory[dev] (every stage + pytest/ruff/mypy)..."
+  log "📦 Installing raginator[dev] (every stage + pytest/ruff/mypy)..."
   "$PIP" install -e ".[dev]"
 }
 
@@ -119,12 +141,12 @@ function dev() {
 function test() {
   # Use the pytest console script, not `python -m pytest`: `-m` always
   # prepends the cwd to sys.path, and our top-level dir is literally named
-  # "ragfactory" -- same as the import namespace -- which then shadows the
-  # editable-install finder for ragfactory.<stage>.
+  # "raginator" -- same as the import namespace -- which then shadows the
+  # editable-install finder for raginator.<stage>.
   local stage="${1:-}"
   if [ -n "$stage" ]; then
-    log "🧪 Testing ragfactory.$stage..."
-    "$PYTEST" "ragfactory/$stage/tests"
+    log "🧪 Testing raginator.$stage..."
+    "$PYTEST" "raginator/$stage/tests"
     return
   fi
   log "🧪 Testing everything..."
@@ -133,17 +155,17 @@ function test() {
 
 function lint() {
   log "🔎 Linting..."
-  "$RUFF" check ragfactory
+  "$RUFF" check raginator
 }
 
 function typecheck() {
-  # Run per stage, not "mypy ragfactory": every stage's source dir is named
-  # plain "src" (flattened, no nested ragfactory/<stage>/ folder), and mypy
+  # Run per stage, not "mypy raginator": every stage's source dir is named
+  # plain "src" (flattened, no nested raginator/<stage>/ folder), and mypy
   # infers module names from nested __init__.py directories on disk -- so
   # checking them all together hits "Duplicate module named src".
   log "🔎 Type-checking (per stage)..."
   for s in core ingest chunk embed store retrieve rerank generate evaluate observe pipeline; do
-    (cd "ragfactory/$s" && "$MYPY" src)
+    (cd "raginator/$s" && "$MYPY" src)
   done
 }
 
@@ -172,11 +194,11 @@ function build_native() {
   "$VENV_DIR/bin/cmake" --build native/build
 
   # native/build isn't on sys.path -- drop the built extension into the
-  # venv's site-packages so ragfactory.store can actually import it.
+  # venv's site-packages so raginator.store can actually import it.
   local site_packages
   site_packages="$("$PY" -c 'import sysconfig; print(sysconfig.get_path("purelib"))')"
-  cp native/build/ragfactory_native*.so "$site_packages/"
-  log "✅ Installed ragfactory_native into $site_packages"
+  cp native/build/raginator_native*.so "$site_packages/"
+  log "✅ Installed raginator_native into $site_packages"
 }
 
 # ---------------------------------------------------------------------------------------
@@ -190,6 +212,35 @@ function clean() {
   find . -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null
   find . -name ".ruff_cache" -exec rm -rf {} + 2>/dev/null
   find . -name ".mypy_cache" -exec rm -rf {} + 2>/dev/null
+}
+
+# ---------------------------------------------------------------------------------------
+#  5)                === 📈 OBSERVABILITY ===
+# ---------------------------------------------------------------------------------------
+function metrics_server() {
+  log "📈 Serving live pipeline metrics on :8000/metrics (Ctrl-C to stop)..."
+  "$PY" scripts/metrics_server.py
+}
+
+function observe() {
+  compose up -d || return 1
+
+  if ! curl -s -o /dev/null "http://localhost:8000/metrics"; then
+    log "ℹ️  Nothing is serving :8000/metrics yet -- run './go metrics_server' in another shell for live data."
+  fi
+
+  log "⏳ Waiting for Grafana..."
+  for _ in $(seq 1 30); do
+    if curl -s -o /dev/null -w "%{http_code}" "http://localhost:3000/api/health" | grep -q 200; then
+      log "🌐 Opening $DASHBOARD_URL"
+      open "$DASHBOARD_URL"
+      return 0
+    fi
+    sleep 1
+  done
+
+  log "❌ Grafana never became ready -- check 'compose logs grafana'."
+  return 1
 }
 
 # -----------------------------
