@@ -76,13 +76,14 @@ Start React Frontend
 -  Backend start at: [**http://127.0.0.1:8001/**](http://127.0.0.1:8001/)
 -  API Documentation [http://127.0.0.1:8001/docs](http://127.0.0.1:8001/docs)
 
-![Raginator](./img/raginator.png)
 
 Start Python Backend + RAG Pipeline
 ```bash
 ./go api                  # Start backend (RAG + Bridge)
 ```
 - GUI start at: [**http://localhost:5173/**](http://localhost:5173/)
+
+![![Raginator](./img/raginator.png)](http://localhost:5173/)
 
 The pipeline runs end-to-end with pure-Python/numpy defaults (no GPU, no
 model downloads). 
@@ -121,7 +122,7 @@ Grafana auto-provisions the Prometheus datasource and loads `raginator/observe/d
 Run `./go metrics_server` alongside it in another shell so
 the panels have live data to show instead of "No data".
 
-![Dashboard](./img/grafana.png)
+![![Dashboard](./img/grafana.png)](http://localhost:3000/d/raginator-3000/)
 
 ### 🔎 Test 
 
