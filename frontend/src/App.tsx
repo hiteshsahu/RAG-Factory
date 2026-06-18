@@ -14,26 +14,33 @@ import ChatState from './components/ChatState'
 
 type AppState = 'drop' | 'process' | 'chat'
 
-interface LogLine { text: string; ok: boolean }
+interface LogLine { text: string; kind: 'default' | 'success' | 'error' }
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
+
+// Demo-only: simulates real pipelines failing partway through, so the UI's
+// error handling is actually exercised instead of always happy-pathing.
+const FAILURE_RATE = 0.3
 
 export default function App() {
   const [appState, setAppState]     = useState<AppState>('drop')
   const [stagesDone, setStagesDone] = useState(0)
   const [activeStage, setActiveStage] = useState(-1)
+  const [failedStage, setFailedStage] = useState<number | null>(null)
   const [logs, setLogs]             = useState<LogLine[]>([])
   const [corpusName, setCorpusName] = useState('')
   const [mode, setMode] = useState<PaletteMode>('dark')
   const theme = useMemo(() => getTheme(mode), [mode])
   const cancelRef = useRef(false)
+  const lastRunRef = useRef<{ files: File[]; urls: string[] }>({ files: [], urls: [] })
 
-  const addLog = useCallback((text: string, ok = false) => {
-    setLogs(l => [...l, { text, ok }])
+  const addLog = useCallback((text: string, kind: LogLine['kind'] = 'default') => {
+    setLogs(l => [...l, { text, kind }])
   }, [])
 
   const runPipeline = useCallback(async (files: File[], urls: string[]) => {
     cancelRef.current = false
+    lastRunRef.current = { files, urls }
     const name = files.length
       ? files[0].name.replace(/\.[^.]+$/, '')
       : new URL(urls[0]).hostname
@@ -41,7 +48,12 @@ export default function App() {
     setAppState('process')
     setStagesDone(0)
     setActiveStage(0)
+    setFailedStage(null)
     setLogs([])
+
+    const failAt = Math.random() < FAILURE_RATE
+      ? Math.floor(Math.random() * STAGES.length)
+      : -1
 
     for (let i = 0; i < STAGES.length; i++) {
       if (cancelRef.current) return
@@ -52,26 +64,41 @@ export default function App() {
         addLog(log)
       }
       await sleep(200)
+
+      if (i === failAt) {
+        addLog(`Stage ${i} (${STAGES[i].name}) failed: ${STAGES[i].error}`, 'error')
+        setFailedStage(i)
+        return
+      }
+
       setStagesDone(i + 1)
       await sleep(150)
     }
 
     await sleep(300)
-    addLog('Pipeline complete. Perry the Platypus has not been detected.', true)
+    addLog('Pipeline complete. Perry the Platypus has not been detected.', 'success')
     await sleep(700)
     setAppState('chat')
   }, [addLog])
+
+  const handleRetry = useCallback(() => {
+    const { files, urls } = lastRunRef.current
+    runPipeline(files, urls)
+  }, [runPipeline])
 
   const handleReset = () => {
     cancelRef.current = true
     setAppState('drop')
     setStagesDone(0)
     setActiveStage(-1)
+    setFailedStage(null)
     setLogs([])
   }
 
-  const statusLabel = appState === 'process' ? 'processing' : appState === 'chat' ? 'ready' : 'idle'
-  const statusColor = appState === 'drop' ? 'default' : 'primary'
+  const statusLabel = appState === 'process'
+    ? (failedStage !== null ? 'failed' : 'processing')
+    : appState === 'chat' ? 'ready' : 'idle'
+  const statusColor = appState === 'drop' ? 'default' : failedStage !== null ? 'error' : 'primary'
 
   return (
     <ThemeProvider theme={theme}>
@@ -94,7 +121,7 @@ export default function App() {
               size="small"
               color={statusColor}
               variant={appState === 'drop' ? 'outlined' : 'filled'}
-              icon={appState === 'process' ? <CircularProgress size={10} color="inherit" /> : undefined}
+              icon={appState === 'process' && failedStage === null ? <CircularProgress size={10} color="inherit" /> : undefined}
             />
             <IconButton
               size="small"
@@ -114,7 +141,10 @@ export default function App() {
           <ProcessState
             stagesDone={stagesDone}
             activeStage={activeStage}
+            failedStage={failedStage}
             logs={logs}
+            onRetry={handleRetry}
+            onReset={handleReset}
           />
         )}
 

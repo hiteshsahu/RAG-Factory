@@ -1,21 +1,26 @@
 import React, { useEffect, useRef } from 'react'
 import {
-  Box, Card, CircularProgress, Container,
+  Alert, AlertTitle, Box, Button, Card, CircularProgress, Container,
   Grid, LinearProgress, Stack, Typography,
 } from '@mui/material'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import ErrorIcon from '@mui/icons-material/Error'
 import { STAGES } from '../data'
 
-interface LogLine { text: string; ok: boolean }
+interface LogLine { text: string; kind: 'default' | 'success' | 'error' }
 
 interface Props {
   stagesDone: number
   activeStage: number
+  failedStage: number | null
   logs: LogLine[]
+  onRetry: () => void
+  onReset: () => void
 }
 
-export default function ProcessState({ stagesDone, activeStage, logs }: Props) {
+export default function ProcessState({ stagesDone, activeStage, failedStage, logs, onRetry, onReset }: Props) {
   const logRef = useRef<HTMLDivElement>(null)
+  const failed = failedStage !== null
 
   useEffect(() => {
     if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight
@@ -33,19 +38,40 @@ export default function ProcessState({ stagesDone, activeStage, logs }: Props) {
             <Typography variant="body1" color="text.secondary" sx={{ fontFamily: '"JetBrains Mono",monospace' }}>
               Pipeline · {stagesDone} / {STAGES.length} stages
             </Typography>
-            <Typography variant="body1" color="primary" sx={{ fontFamily: '"JetBrains Mono",monospace', fontWeight: 600 }}>
-              {progress}%
+            <Typography variant="body1" color={failed ? 'error' : 'primary'} sx={{ fontFamily: '"JetBrains Mono",monospace', fontWeight: 600 }}>
+              {failed ? 'failed' : `${progress}%`}
             </Typography>
           </Stack>
-          <LinearProgress variant="determinate" value={progress} color="primary" sx={{ height: 6, borderRadius: 3 }} />
+          <LinearProgress variant="determinate" value={progress} color={failed ? 'error' : 'primary'} sx={{ height: 6, borderRadius: 3 }} />
         </Box>
+
+        {/* Failure banner */}
+        {failed && failedStage !== null && (
+          <Alert
+            severity="error"
+            action={
+              <Stack direction="row" spacing={1}>
+                <Button color="inherit" size="small" onClick={onReset}>Back</Button>
+                <Button color="inherit" size="small" variant="outlined" onClick={onRetry}>Retry</Button>
+              </Stack>
+            }
+          >
+            <AlertTitle sx={{ fontWeight: 600 }}>
+              Stage {failedStage} — {STAGES[failedStage].name} ({STAGES[failedStage].alias}) failed
+            </AlertTitle>
+            <Typography variant="body2" sx={{ fontFamily: '"JetBrains Mono",monospace', fontSize: '0.78rem' }}>
+              {STAGES[failedStage].error}
+            </Typography>
+          </Alert>
+        )}
 
         {/* Stage tiles */}
         <Grid container spacing={2.5}>
           {STAGES.map((s, i) => {
+            const isFailed = i === failedStage
             const done    = i < stagesDone
-            const active  = i === activeStage && i >= stagesDone
-            const waiting = i > activeStage
+            const active  = !isFailed && i === activeStage && i >= stagesDone
+            const waiting = !isFailed && i > activeStage
 
             return (
               <Grid item xs={6} sm={4} md={3} key={i}>
@@ -54,12 +80,14 @@ export default function ProcessState({ stagesDone, activeStage, logs }: Props) {
                     p: 2.5,
                     minHeight: 140,
                     opacity: waiting ? 0.45 : 1,
-                    borderColor: done
+                    borderColor: isFailed
+                      ? 'rgba(226,75,74,0.6)'
+                      : done
                       ? 'rgba(29,158,117,0.4)'
                       : active
                       ? 'rgba(29,158,117,0.25)'
                       : 'rgba(255,255,255,0.08)',
-                    bgcolor: done ? 'rgba(29,158,117,0.08)' : 'background.paper',
+                    bgcolor: isFailed ? 'rgba(226,75,74,0.08)' : done ? 'rgba(29,158,117,0.08)' : 'background.paper',
                     transition: 'all .3s',
                   }}
                 >
@@ -67,12 +95,13 @@ export default function ProcessState({ stagesDone, activeStage, logs }: Props) {
                     <Stack direction="row" justifyContent="space-between" alignItems="center">
                       <Typography
                         variant="body2"
-                        sx={{ fontFamily: '"JetBrains Mono",monospace', color: done || active ? 'primary.main' : 'text.secondary' }}
+                        sx={{ fontFamily: '"JetBrains Mono",monospace', color: isFailed ? 'error.main' : done || active ? 'primary.main' : 'text.secondary' }}
                       >
                         s{s.num}
                       </Typography>
-                      {done   && <CheckCircleIcon sx={{ fontSize: 20, color: 'primary.main' }} />}
-                      {active && <CircularProgress size={16} color="primary" />}
+                      {isFailed && <ErrorIcon sx={{ fontSize: 20, color: 'error.main' }} />}
+                      {!isFailed && done   && <CheckCircleIcon sx={{ fontSize: 20, color: 'primary.main' }} />}
+                      {!isFailed && active && <CircularProgress size={16} color="primary" />}
                     </Stack>
 
                     <Typography variant="h6" fontWeight={600}>{s.name}</Typography>
@@ -83,9 +112,12 @@ export default function ProcessState({ stagesDone, activeStage, logs }: Props) {
 
                     <Typography
                       variant="body2"
-                      sx={{ fontFamily: '"JetBrains Mono",monospace', fontSize: '0.75rem', mt: 0.5, color: done ? 'primary.main' : 'text.secondary' }}
+                      sx={{
+                        fontFamily: '"JetBrains Mono",monospace', fontSize: '0.75rem', mt: 0.5,
+                        color: isFailed ? 'error.main' : done ? 'primary.main' : 'text.secondary',
+                      }}
                     >
-                      {done ? s.stats : active ? 'running…' : 'waiting…'}
+                      {isFailed ? 'failed' : done ? s.stats : active ? 'running…' : 'waiting…'}
                     </Typography>
                   </Stack>
                 </Card>
@@ -113,7 +145,13 @@ export default function ProcessState({ stagesDone, activeStage, logs }: Props) {
             <Box sx={{ color: 'rgba(255,255,255,0.2)' }}>› initialising…</Box>
           ) : (
             logs.map((l, i) => (
-              <Box key={i} sx={{ color: l.ok ? 'primary.main' : 'rgba(255,255,255,0.35)' }}>
+              <Box
+                key={i}
+                sx={{
+                  color: l.kind === 'success' ? 'primary.main' : l.kind === 'error' ? 'error.main' : 'rgba(255,255,255,0.35)',
+                  fontWeight: l.kind === 'error' ? 600 : 400,
+                }}
+              >
                 › {l.text}
               </Box>
             ))
