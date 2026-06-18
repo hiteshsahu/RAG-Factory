@@ -9,7 +9,10 @@ import ManageSearchIcon from '@mui/icons-material/ManageSearch'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import CheckIcon from '@mui/icons-material/Check'
 import CloseIcon from '@mui/icons-material/Close'
+import HistoryIcon from '@mui/icons-material/History'
 import { DEMO_QA, DemoAnswer, formatBytes, type CorpusStats, type SourceChunk } from '../data'
+import HistoryDrawer, { type HistoryEntry } from './HistoryDrawer'
+import { useLocalStorage } from '../hooks/useLocalStorage'
 
 interface Message {
   role: 'user' | 'bot'
@@ -18,6 +21,10 @@ interface Message {
   ms?: number
   tokens?: number
   cost?: string
+}
+
+interface FullHistoryEntry extends HistoryEntry {
+  messages: Message[]
 }
 
 interface Props {
@@ -44,8 +51,14 @@ export default function ChatState({ corpusName, stats, onReset }: Props) {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null)
   const [previewSource, setPreviewSource] = useState<SourceChunk | null>(null)
   const [inputFocused, setInputFocused] = useState(false)
+  const [history, setHistory] = useLocalStorage<FullHistoryEntry[]>('raginator:chat-history', [])
+  const [historyOpen, setHistoryOpen] = useState(false)
+  const [activeHistoryId, setActiveHistoryId] = useState<number | null>(null)
   const chatRef = useRef<HTMLDivElement>(null)
   const queryInputRef = useRef<HTMLInputElement>(null)
+  // Resume id numbering above whatever was already persisted, so restored
+  // entries from a previous session can't collide with new ones.
+  const historyIdRef = useRef(history.reduce((max, h) => Math.max(max, h.id), 0))
 
   const copyMessage = (text: string, index: number) => {
     navigator.clipboard.writeText(text)
@@ -73,7 +86,9 @@ export default function ChatState({ corpusName, stats, onReset }: Props) {
     const text = (q ?? query).trim()
     if (!text || thinking) return
     setQuery('')
-    setMessages(m => [...m, { role: 'user', text }])
+    const userMsg: Message = { role: 'user', text }
+    setMessages(m => [...m, userMsg])
+    setActiveHistoryId(null)
     setThinking(true)
     await sleep(700 + Math.random() * 500)
 
@@ -83,18 +98,42 @@ export default function ChatState({ corpusName, stats, onReset }: Props) {
       DEMO_QA[Math.floor(Math.random() * DEMO_QA.length)]
 
     setThinking(false)
-    setMessages(m => [...m, { role: 'bot', text: match.a, sources: match.sources, ms: match.ms, tokens: match.tokens, cost: match.cost }])
+    const botMsg: Message = { role: 'bot', text: match.a, sources: match.sources, ms: match.ms, tokens: match.tokens, cost: match.cost }
+    setMessages(m => [...m, botMsg])
+
+    const id = ++historyIdRef.current
+    setHistory(h => [{ id, query: text, time: Date.now(), messages: [userMsg, botMsg] }, ...h])
+    setActiveHistoryId(id)
+  }
+
+  const restoreEntry = (entry: HistoryEntry) => {
+    const full = history.find(h => h.id === entry.id)
+    if (!full) return
+    setMessages(full.messages)
+    setActiveHistoryId(full.id)
+    setHistoryOpen(false)
   }
 
   return (
-    <Box sx={{
-      display: 'flex',
-      flexDirection: 'column',
-      height: 'calc(100vh - 48px)',
-      p: 2}}>
+    <Box sx={{ display: 'flex', height: 'calc(100vh - 48px)' }}>
+
+      <HistoryDrawer
+        open={historyOpen}
+        entries={history}
+        activeId={activeHistoryId}
+        onSelect={restoreEntry}
+        onClose={() => setHistoryOpen(false)}
+      />
+
+      <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', p: 2 }}>
 
       {/* Corpus bar */}
       <Box sx={{ px: 2, py: 0.75, borderBottom: '0.5px solid rgba(255,255,255,0.08)', bgcolor: 'background.paper', display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+        <Tooltip title={historyOpen ? 'Hide history' : 'Show history'}>
+          <IconButton size="small" onClick={() => setHistoryOpen(o => !o)} color={historyOpen ? 'primary' : 'default'}>
+            <HistoryIcon sx={{ fontSize: 18 }} />
+          </IconButton>
+        </Tooltip>
         <Chip label={`◎ ${corpusName}`} size="small" color="primary" variant="outlined" />
         <Chip label={`${stats.chunks.toLocaleString()} chunks`} size="small" variant="outlined" />
         <Chip label={`${stats.docs} doc${stats.docs === 1 ? '' : 's'}`} size="small" variant="outlined" />
@@ -294,6 +333,8 @@ export default function ChatState({ corpusName, stats, onReset }: Props) {
           </>
         )}
       </Dialog>
+
+      </Box>
 
     </Box>
   )
