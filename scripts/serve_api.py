@@ -37,7 +37,16 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+# Single source of truth for where this binds -- the printed URLs below are
+# built from these, not separately hardcoded, so they can't drift out of
+# sync with the actual uvicorn.run() call.
+HOST = "127.0.0.1"
+PORT = 8001
+
 if __name__ == "__main__":
+    base_url = f"http://{HOST}:{PORT}"
+    print(f"📖 API docs:  {base_url}/docs")
+    print(f"📖 Route map: {base_url}/")
     # No reload=True: uvicorn's reloader respawns the worker via
     # multiprocessing's "spawn" start method, which re-launches a fresh
     # interpreter the same way `python -c` does -- cwd lands back on
@@ -45,4 +54,4 @@ if __name__ == "__main__":
     # (and its careful sys.path ordering) gets a chance to run again,
     # reintroducing the exact collision this script exists to avoid.
     # Restart `./go api` manually after editing api/ instead.
-    uvicorn.run("api.main:app", host="127.0.0.1", port=8001)
+    uvicorn.run("api.main:app", host=HOST, port=PORT)

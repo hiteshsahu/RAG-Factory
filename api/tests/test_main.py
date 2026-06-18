@@ -74,6 +74,17 @@ def test_unsupported_file_type_is_rejected(monkeypatch):
     assert ".docx" in events[0]["text"]
 
 
+def test_root_lists_routes_and_docs_links():
+    response = client.get("/")
+    assert response.status_code == 200
+    body = response.json()
+
+    assert body["docs"] == {"swagger": "/docs", "redoc": "/redoc", "openapi": "/openapi.json"}
+
+    paths = {route["path"] for route in body["routes"]}
+    assert paths == {"/", "/api/health", "/api/pipeline/start", "/api/query", "/api/corpus/stats"}
+
+
 def test_query_without_corpus_returns_409():
     _STATE["pipeline"] = None
     response = client.post("/api/query", json={"query": "anything"})
