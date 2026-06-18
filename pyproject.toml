@@ -54,7 +54,7 @@ generate = ["requests>=2.31"]
 evaluate = ["requests>=2.31"]
 
 # Stage 8 — The Observe-Inator
-observe = []
+observe = ["prometheus-client>=0.19", "opentelemetry-api>=1.20"]
 
 # Orchestrator that wires all 9 stages together
 pipeline = []
@@ -71,6 +71,7 @@ dev = [
     "ruff>=0.4.0",
     "mypy>=1.9.0",
     "reportlab>=4.0",  # generates a real PDF fixture for test_pdf.py
+    "opentelemetry-sdk>=1.20",  # in-memory span exporter for test_tracing.py
 ]
 
 # One distribution, code organized by stage under ragfactory/<stage>/src/ --

@@ -1,0 +1,77 @@
+{
+  "title": "RAGINATOR-3000 — RAG Factory",
+  "uid": "raginator-3000",
+  "schemaVersion": 39,
+  "version": 1,
+  "tags": ["ragfactory", "raginator"],
+  "time": { "from": "now-6h", "to": "now" },
+  "refresh": "30s",
+  "templating": {
+    "list": [
+      {
+        "name": "DS_PROMETHEUS",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": {}
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Index Requests / sec",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "rate(ragfactory_index_requests_total[5m])",
+          "legendFormat": "index requests/s"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Chunks Indexed (total)",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "ragfactory_indexed_chunks_total",
+          "legendFormat": "chunks indexed"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Query Requests / sec",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "rate(ragfactory_query_requests_total[5m])",
+          "legendFormat": "query requests/s"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Query Score (p50 / p95)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.5, rate(ragfactory_query_score_bucket[5m]))",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, rate(ragfactory_query_score_bucket[5m]))",
+          "legendFormat": "p95"
+        }
+      ]
+    }
+  ]
+}
