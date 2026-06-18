@@ -58,8 +58,8 @@ case ${option} in
   0)
     echo "=== 🛠 PREREQUISITES ==="
     echo "⚙️  install_tools     -- Create .venv and upgrade pip"
-    echo "📦  install           -- Editable-install raginator[dev] (every stage + pytest/ruff/mypy)"
-    echo "📦  install <stage>   -- Editable-install just raginator[<stage>], e.g. ./go install chunk"
+    echo "📦  install           -- Install all stages + pytest/ruff/mypy"
+    echo "📦  install <stage>   -- install perticulat stage, e.g. ./go install chunk"
     ;;
 
   1)
@@ -89,8 +89,8 @@ case ${option} in
 
   5)
     echo "=== 📈 OBSERVABILITY ==="
-    echo "📈  metrics_server    -- Run the toy pipeline on a loop, exposing :8000/metrics"
     echo "📊  observe           -- docker/podman compose up Prometheus+Grafana, open the dashboard"
+    echo "📈  metrics_server    -- collect matrics, exposing :8000/metrics"
     ;;
 
   6)

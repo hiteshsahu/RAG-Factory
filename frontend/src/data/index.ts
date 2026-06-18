@@ -47,10 +47,12 @@ export interface PipelineSettings {
   chunkStrategy: ChunkStrategy
 }
 
+// Ollama by default -- no API key required, so the app works the moment
+// Ollama is installed/running, with no signup/config step first.
 export const DEFAULT_SETTINGS: PipelineSettings = {
-  embedProvider: 'Mistral',
+  embedProvider: 'Ollama',
   vectorStore: 'ChromaDB',
-  llmProvider: 'Mistral',
+  llmProvider: 'Ollama',
   chunkStrategy: 'Semantic',
 }
 

@@ -52,6 +52,110 @@
 
 ---
 
+---
+
+## 📟 `./go` CLI
+
+Open Interactive CLI
+> ./go                     
+
+
+### ⚙️ Install dependencies
+```bash
+./go install_tools        # create .venv, upgrade pip
+./go install              # editable-install raginator[dev] (every stage + pytest/ruff/mypy)
+./go install chunk        # editable-install just raginator[chunk]
+```
+
+### ▶️ Run Pipeline
+
+Start React Frontend
+```bash
+./go dev                  # Start UI
+````
+-  Backend start at: [**http://127.0.0.1:8001/**](http://127.0.0.1:8001/)
+-  API Documentation [http://127.0.0.1:8001/docs](http://127.0.0.1:8001/docs)
+
+Start Python Backend + RAG Pipeline
+```bash
+./go api                  # Start backend (RAG + Bridge)
+```
+- GUI start at: [**http://localhost:5173/**](http://localhost:5173/)
+
+The pipeline runs end-to-end with pure-Python/numpy defaults (no GPU, no
+model downloads). 
+
+### 🛠️ Build CPP
+```bash
+./go build_native         # CMake build raginator_native (CPU by default)
+./go build_native --cuda. # CMake build raginator_native (CPU by default)
+```
+
+`./go build_native` builds the optional C++/CUDA extension
+used by the store stage; if it isn't built, `InMemoryVectorStore`
+transparently falls back to a numpy implementation of the same similarity
+scoring.
+
+### 📊 Observability
+
+### Prometheus+Grafana
+```bash
+  ./go observe    # docker/podman compose up Prometheus+Grafana, open the dashboard
+```
+
+- Dashboard [**: http://localhost:3000/d/raginator-3000/**](http://localhost:3000/d/raginator-3000/)
+
+Brings up Prometheus and Grafana 
+- `docker compose`, falling back to `podman compose` if `docker` isn't installed,
+-  waits for Grafana's health check, then opens the **raginator-3000** dashboard in the browser.
+
+Grafana auto-provisions the Prometheus datasource and loads `raginator/observe/dashboards/raginator.json` 
+-  no manual setup. It's a local-only stack 
+- anonymous admin auth, so the dashboard opens with no login prompt
+
+```bash
+  ./go metrics_server 
+```
+Run `./go metrics_server` alongside it in another shell so
+the panels have live data to show instead of "No data".
+
+### 🔎 Test 
+
+```bash
+./go test [stage]         # pytest, across everything or one stage
+./go lint                 # ruff check
+./go typecheck            # mypy, run per stage (see note below)
+./go check                # lint + typecheck + test
+```
+
+
+> **Note:** `./go typecheck` runs mypy once per stage rather than once for
+> the whole tree. Every stage's source dir is named plain `src` (that's the
+> flattening above), and mypy infers a module's dotted name purely from
+> nested `__init__.py` directories on disk — checking them all in one mypy
+> invocation hits "Duplicate module named src". Per-stage invocation avoids
+> that; it's also what made cross-package types resolve correctly (mypy now
+> picks up `raginator.core` from the actual installed environment instead
+> of trying to triangulate it from a single package's isolated search path).
+
+### 🧹 Clean up 
+
+```bash
+./go clean                # remove .venv, native/build, caches
+```
+
+Equivalently, the same selection is available as plain pip extras:
+
+```bash
+pip install -e ".[all]"     # every stage + the orchestrator
+pip install -e ".[chunk]"   # just Stage 1's deps (chunk has none beyond core)
+pip install -e ".[dev]"     # all stages + pytest, ruff, mypy
+```
+
+Each stage's tests also run independently, e.g. `pytest raginator/chunk/tests`.
+
+---
+
 ## 📂 Project Layout
 
 ```text
@@ -93,103 +197,6 @@ It's a single distribution (`raginator`) with one pip extra per stage, just
 gating that stage's third-party deps (e.g. `embed`/`store` need numpy) — all
 the code always ships together, organized by folder for readability and so a
 team can own a stage's `raginator/<stage>/` folder day to day.
-
-
----
-
-### `./go` CLI
-
-Open Interactive CLI
-> ./go                      # interactive command menu
-
-
-### Install dependnecies
-```bash
-./go install_tools        # create .venv, upgrade pip
-./go install              # editable-install raginator[dev] (every stage + pytest/ruff/mypy)
-./go install chunk        # editable-install just raginator[chunk]
-```
-
-### Run Pipeline
-
-Start React Frontend
-```bash
-./go dev                  # Start UI
-````
--  Backend start at: [**http://127.0.0.1:8001/**](http://127.0.0.1:8001/)
--  API Documentation [http://127.0.0.1:8001/docs](http://127.0.0.1:8001/docs)
-
-Start Python Backend + RAG Pipeline
-```bash
-./go api                  # Start backend (RAG + Bridge)
-```
-- GUI start at: [**http://localhost:5173/**](http://localhost:5173/)
-
-The pipeline runs end-to-end with pure-Python/numpy defaults (no GPU, no
-model downloads). 
-
-### Build CPP
-```bash
-./go build_native         # CMake build raginator_native (CPU by default)
-./go build_native --cuda. # CMake build raginator_native (CPU by default)
-```
-
-`./go build_native` builds the optional C++/CUDA extension
-used by the store stage; if it isn't built, `InMemoryVectorStore`
-transparently falls back to a numpy implementation of the same similarity
-scoring.
-
-### Observability
-```bash
-./go metrics_server       # run the toy pipeline on a loop, exposing :8000/metrics
-./go observe               # docker/podman compose up Prometheus+Grafana, open the dashboard
-```
-
-`./go observe` Brings up Prometheus and Grafana (`docker compose`, falling
-back to `podman compose` if `docker` isn't installed), waits for Grafana's
-health check, then opens the **raginator-3000** dashboard in the browser.
-
-Grafana auto-provisions the Prometheus datasource and loads `raginator/observe/dashboards/raginator.json` — no manual setup. It's a
-local-only stack (anonymous admin auth, so the dashboard opens with no
-login prompt);
-
-run `./go metrics_server` alongside it in another shell so
-the panels have live data to show instead of "No data".
-
-### Test 
-```bash
-./go test [stage]         # pytest, across everything or one stage
-./go lint                 # ruff check
-./go typecheck            # mypy, run per stage (see note below)
-./go check                # lint + typecheck + test
-```
-
-
-> **Note:** `./go typecheck` runs mypy once per stage rather than once for
-> the whole tree. Every stage's source dir is named plain `src` (that's the
-> flattening above), and mypy infers a module's dotted name purely from
-> nested `__init__.py` directories on disk — checking them all in one mypy
-> invocation hits "Duplicate module named src". Per-stage invocation avoids
-> that; it's also what made cross-package types resolve correctly (mypy now
-> picks up `raginator.core` from the actual installed environment instead
-> of trying to triangulate it from a single package's isolated search path).
-
-
-
-```bash
-./go clean                # remove .venv, native/build, caches
-```
-
-Equivalently, the same selection is available as plain pip extras:
-
-```bash
-pip install -e ".[all]"     # every stage + the orchestrator
-pip install -e ".[chunk]"   # just Stage 1's deps (chunk has none beyond core)
-pip install -e ".[dev]"     # all stages + pytest, ruff, mypy
-```
-
-Each stage's tests also run independently, e.g. `pytest raginator/chunk/tests`.
-
 
 
 ---
