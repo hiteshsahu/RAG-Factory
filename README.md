@@ -116,7 +116,8 @@ Start React Frontend
 ```bash
 ./go dev                  # Start UI
 ````
-- Backend start at: [**http://127.0.0.1:8001/**](http://127.0.0.1:8001/)
+-  Backend start at: [**http://127.0.0.1:8001/**](http://127.0.0.1:8001/)
+-  API Documentation [http://127.0.0.1:8001/docs](http://127.0.0.1:8001/docs)
 
 Start Python Backend + RAG Pipeline
 ```bash

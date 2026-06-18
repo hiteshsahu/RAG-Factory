@@ -45,14 +45,12 @@ def _sse(event: dict[str, Any]) -> str:
 async def root() -> dict[str, Any]:
     """Lists every registered route -- read from app.routes itself (not a
     hardcoded list) so it can't drift out of sync as endpoints are added."""
-    routes = sorted(
-        (
-            {"path": route.path, "methods": sorted(route.methods)}
-            for route in app.routes
-            if isinstance(route, APIRoute)
-        ),
-        key=lambda r: r["path"],
-    )
+    routes: list[dict[str, Any]] = [
+        {"path": route.path, "methods": sorted(route.methods or [])}
+        for route in app.routes
+        if isinstance(route, APIRoute)
+    ]
+    routes.sort(key=lambda r: str(r["path"]))
     return {"routes": routes}
 
 
