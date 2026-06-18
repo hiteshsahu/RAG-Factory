@@ -60,7 +60,11 @@ export default function ChatState({ corpusName, onReset }: Props) {
   }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 48px)' }}>
+    <Box sx={{
+      display: 'flex',
+      flexDirection: 'column',
+      height: 'calc(100vh - 48px)',
+      p: 2}}>
 
       {/* Corpus bar */}
       <Box sx={{ px: 2, py: 0.75, borderBottom: '0.5px solid rgba(255,255,255,0.08)', bgcolor: 'background.paper', display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
