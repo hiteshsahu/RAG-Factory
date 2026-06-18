@@ -5,7 +5,7 @@
 
 #include "similarity.hpp"
 
-namespace ragfactory {
+namespace raginator {
 
 namespace {
 
@@ -65,4 +65,4 @@ std::vector<float> cosine_similarity_batch(
     return scores;
 }
 
-}  // namespace ragfactory
+}  // namespace raginator

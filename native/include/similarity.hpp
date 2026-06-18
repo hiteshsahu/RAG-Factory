@@ -2,7 +2,7 @@
 
 #include <vector>
 
-namespace ragfactory {
+namespace raginator {
 
 // Cosine similarity between a single query vector and a batch of candidate
 // vectors. Returns one score per candidate. Implemented in similarity.cpp
@@ -11,4 +11,4 @@ std::vector<float> cosine_similarity_batch(
     const std::vector<float>& query,
     const std::vector<std::vector<float>>& candidates);
 
-}  // namespace ragfactory
+}  // namespace raginator

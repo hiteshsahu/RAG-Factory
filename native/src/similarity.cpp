@@ -2,7 +2,7 @@
 
 #include <cmath>
 
-namespace ragfactory {
+namespace raginator {
 
 std::vector<float> cosine_similarity_batch(
     const std::vector<float>& query,
@@ -26,4 +26,4 @@ std::vector<float> cosine_similarity_batch(
     return scores;
 }
 
-}  // namespace ragfactory
+}  // namespace raginator
