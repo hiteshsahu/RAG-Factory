@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import uuid
+
 from api.schemas import ChunkStrategy, Provider, VectorStoreName
 from raginator.chunk import CodeChunker, FixedSizeChunker, RecursiveChunker, SemanticChunker
 from raginator.core import Chunker, Embedder, Generator, VectorStore
@@ -40,8 +42,17 @@ def build_chunker(strategy: ChunkStrategy, embedder: Embedder) -> Chunker:
 
 
 def build_store(name: VectorStoreName) -> VectorStore:
+    # The bridge is single-corpus-at-a-time by design (see api/main.py's
+    # _STATE comment), but a fixed collection/table name would silently
+    # accumulate every corpus ever indexed in this process: ChromaDB's
+    # client shares state across instances with identical settings, and
+    # pgvector's table just keeps existing rows around (INSERT, not
+    # replace). A new chat would then retrieve chunks left over from
+    # whatever was uploaded earlier in the same process -- give every run
+    # its own isolated collection/table instead.
+    run_id = uuid.uuid4().hex[:12]
     if name == "ChromaDB":
-        return ChromaVectorStore(collection_name="raginator-bridge")
+        return ChromaVectorStore(collection_name=f"raginator-bridge-{run_id}")
     if name == "pgvector":
-        return PgVectorStore()
+        return PgVectorStore(table=f"raginator_chunks_{run_id}")
     raise ValueError(f"Unknown vector store: {name}")  # pragma: no cover -- Literal-exhaustive

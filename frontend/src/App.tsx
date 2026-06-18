@@ -199,18 +199,27 @@ export default function App() {
       <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
 
         <AppBar position="sticky" elevation={0} color="transparent">
-          <Toolbar variant="dense" sx={{ gap: 1 }}>
-            <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'primary.main', mr: 1 }} />
+          <Toolbar  sx={{ gap: 1 }}>
+            <Box
+                component="img"
+                src="/duck-icon.png"
+                alt=""
+                aria-hidden
+                sx={{ width: 48, height: 48, objectFit: 'contain', mr: 1 }}
+            />
             <Typography
               variant="h6"
               onClick={handleReset}
               sx={{
-                flexGrow: 1, fontWeight: 600, letterSpacing: '-0.02em', cursor: 'pointer',
+                flexGrow: 1, fontWeight: 600, letterSpacing: '0.02em', cursor: 'pointer',
                 userSelect: 'none', '&:hover': { opacity: 0.8 },
               }}
             >
-              Raginator
+              <Box component="span" sx={{ color: 'primary.main' }}>RAG</Box>
+              {' '}
+              <Box component="span" sx={{ color: 'secondary.main' }}>FACTORY</Box>
             </Typography>
+
             <Chip
               label={`${settings.embedProvider} · ${settings.vectorStore}`}
               size="small" variant="outlined"

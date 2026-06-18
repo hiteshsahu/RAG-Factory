@@ -86,7 +86,7 @@ case ${option} in
     echo "=== 🧹 CLEANUP ==="
     echo "🧹  clean             -- Remove .venv, native/build, __pycache__, egg-info, caches"
     ;;
-
+`
   5)
     echo "=== 📈 OBSERVABILITY ==="
     echo "📊  observe           -- docker/podman compose up Prometheus+Grafana, open the dashboard"
