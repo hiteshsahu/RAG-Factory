@@ -1,9 +1,12 @@
-import React, { useCallback, useRef, useState } from 'react'
+import React, { useCallback, useMemo, useRef, useState } from 'react'
 import {
   AppBar, Box, Chip, CircularProgress,
-  CssBaseline, ThemeProvider, Toolbar, Typography,
+  CssBaseline, IconButton, ThemeProvider, Toolbar, Typography,
 } from '@mui/material'
-import theme from './theme'
+import type { PaletteMode } from '@mui/material'
+import LightModeIcon from '@mui/icons-material/LightMode'
+import DarkModeIcon from '@mui/icons-material/DarkMode'
+import getTheme from './theme'
 import { STAGES } from './data'
 import DropState from './components/DropState'
 import ProcessState from './components/ProcessState'
@@ -21,6 +24,8 @@ export default function App() {
   const [activeStage, setActiveStage] = useState(-1)
   const [logs, setLogs]             = useState<LogLine[]>([])
   const [corpusName, setCorpusName] = useState('')
+  const [mode, setMode] = useState<PaletteMode>('dark')
+  const theme = useMemo(() => getTheme(mode), [mode])
   const cancelRef = useRef(false)
 
   const addLog = useCallback((text: string, ok = false) => {
@@ -91,6 +96,13 @@ export default function App() {
               variant={appState === 'drop' ? 'outlined' : 'filled'}
               icon={appState === 'process' ? <CircularProgress size={10} color="inherit" /> : undefined}
             />
+            <IconButton
+              size="small"
+              onClick={() => setMode(m => (m === 'dark' ? 'light' : 'dark'))}
+              aria-label="Toggle dark/light mode"
+            >
+              {mode === 'dark' ? <LightModeIcon sx={{ fontSize: 18 }} /> : <DarkModeIcon sx={{ fontSize: 18 }} />}
+            </IconButton>
           </Toolbar>
         </AppBar>
 
