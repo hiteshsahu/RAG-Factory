@@ -7,7 +7,7 @@ import type { PaletteMode } from '@mui/material'
 import LightModeIcon from '@mui/icons-material/LightMode'
 import DarkModeIcon from '@mui/icons-material/DarkMode'
 import getTheme from './theme'
-import { STAGES, formatBytes } from './data'
+import { STAGES, formatBytes, type CorpusStats } from './data'
 import DropState from './components/DropState'
 import ProcessState from './components/ProcessState'
 import ChatState from './components/ChatState'
@@ -21,6 +21,11 @@ const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
 // Demo-only: simulates real pipelines failing partway through, so the UI's
 // error handling is actually exercised instead of always happy-pathing.
 const FAILURE_RATE = 0.3
+const EMBEDDING_MODEL = 'Mistral mistral-embed · 1024-dim'
+const EMBEDDING_DIM = 1024
+const FALLBACK_CORPUS_STATS: CorpusStats = {
+  docs: 0, chunks: 0, avgChunkTokens: 0, embeddingModel: EMBEDDING_MODEL, indexSizeBytes: 0,
+}
 
 export default function App() {
   const [appState, setAppState]     = useState<AppState>('drop')
@@ -29,6 +34,7 @@ export default function App() {
   const [failedStage, setFailedStage] = useState<number | null>(null)
   const [logs, setLogs]             = useState<LogLine[]>([])
   const [stageStats, setStageStats] = useState<Record<number, string>>({})
+  const [corpusStats, setCorpusStats] = useState<CorpusStats | null>(null)
   const [corpusName, setCorpusName] = useState('')
   const [mode, setMode] = useState<PaletteMode>('dark')
   const theme = useMemo(() => getTheme(mode), [mode])
@@ -63,6 +69,21 @@ export default function App() {
       ? `${files.length} file${files.length === 1 ? '' : 's'} · ${formatBytes(totalBytes)}`
       : `${urls.length} URL${urls.length === 1 ? '' : 's'}`
     setStageStats({ 0: sourceLabel })
+
+    // Chunks/index size are derived from the real byte count (~1.4 KB of
+    // text per chunk) rather than a fixed demo number, so they scale with
+    // whatever was actually dropped. URLs have no real byte count to read,
+    // so fall back to a per-page estimate.
+    const estimatedBytes = files.length ? totalBytes : urls.length * 50_000
+    const chunkCount = Math.max(itemCount, Math.round(estimatedBytes / 1400))
+    const avgChunkTokens = 312
+    const newCorpusStats: CorpusStats = {
+      docs: itemCount,
+      chunks: chunkCount,
+      avgChunkTokens,
+      embeddingModel: EMBEDDING_MODEL,
+      indexSizeBytes: chunkCount * EMBEDDING_DIM * 4, // float32 vectors
+    }
 
     const ingestLogs = files.length
       ? [
@@ -104,6 +125,7 @@ export default function App() {
 
     await sleep(300)
     addLog('Pipeline complete. Perry the Platypus has not been detected.', 'success')
+    setCorpusStats(newCorpusStats)
     await sleep(700)
     setAppState('chat')
   }, [addLog])
@@ -121,6 +143,7 @@ export default function App() {
     setFailedStage(null)
     setLogs([])
     setStageStats({})
+    setCorpusStats(null)
   }
 
   const statusLabel = appState === 'process'
@@ -180,6 +203,7 @@ export default function App() {
         {appState === 'chat' && (
           <ChatState
             corpusName={corpusName}
+            stats={corpusStats ?? FALLBACK_CORPUS_STATS}
             onReset={handleReset}
           />
         )}

@@ -1,13 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react'
 import {
-  Box, Button, Chip, CircularProgress,
-  IconButton, Paper, Stack, TextField, Tooltip, Typography,
+  Box, Button, Card, Chip, CircularProgress,
+  Grid, IconButton, Paper, Stack, TextField, Tooltip, Typography,
 } from '@mui/material'
 import SendIcon from '@mui/icons-material/Send'
 import ManageSearchIcon from '@mui/icons-material/ManageSearch'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import CheckIcon from '@mui/icons-material/Check'
-import { DEMO_QA, DemoAnswer } from '../data'
+import { DEMO_QA, DemoAnswer, formatBytes, type CorpusStats } from '../data'
 
 interface Message {
   role: 'user' | 'bot'
@@ -20,12 +20,21 @@ interface Message {
 
 interface Props {
   corpusName: string
+  stats: CorpusStats
   onReset: () => void
 }
 
+const STAT_ITEMS = (stats: CorpusStats) => [
+  { label: 'Documents',       value: String(stats.docs) },
+  { label: 'Chunks',          value: stats.chunks.toLocaleString() },
+  { label: 'Avg chunk size',  value: `${stats.avgChunkTokens} tok` },
+  { label: 'Embedding model', value: stats.embeddingModel },
+  { label: 'Index size',      value: formatBytes(stats.indexSizeBytes) },
+]
+
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
 
-export default function ChatState({ corpusName, onReset }: Props) {
+export default function ChatState({ corpusName, stats, onReset }: Props) {
   const [messages, setMessages] = useState<Message[]>([])
   const [query, setQuery]       = useState('')
   const [thinking, setThinking] = useState(false)
@@ -69,8 +78,8 @@ export default function ChatState({ corpusName, onReset }: Props) {
       {/* Corpus bar */}
       <Box sx={{ px: 2, py: 0.75, borderBottom: '0.5px solid rgba(255,255,255,0.08)', bgcolor: 'background.paper', display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
         <Chip label={`◎ ${corpusName}`} size="small" color="primary" variant="outlined" />
-        <Chip label="1,842 chunks" size="small" variant="outlined" />
-        <Chip label="247 docs" size="small" variant="outlined" />
+        <Chip label={`${stats.chunks.toLocaleString()} chunks`} size="small" variant="outlined" />
+        <Chip label={`${stats.docs} doc${stats.docs === 1 ? '' : 's'}`} size="small" variant="outlined" />
         <Box sx={{ flex: 1 }} />
         <Button size="small" color="error" variant="outlined" onClick={onReset} sx={{ minWidth: 0, px: 1.5 }}>
           Reset
@@ -79,6 +88,27 @@ export default function ChatState({ corpusName, onReset }: Props) {
 
       {/* Messages */}
       <Box ref={chatRef} sx={{ flex: 1, overflowY: 'auto', p: 3, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+
+        {/* Corpus stats card -- confirms the pipeline actually produced something */}
+        <Card sx={{ p: 2.5 }}>
+          <Typography variant="overline" color="primary">✓ Corpus ready</Typography>
+          <Grid container spacing={2} mt={1}>
+            {STAT_ITEMS(stats).map(({ label, value }) => (
+              <Grid item xs={6} sm={4} md={2.4} key={label}>
+                <Typography
+                  variant="caption" color="text.secondary"
+                  sx={{ fontFamily: '"JetBrains Mono",monospace', fontSize: '0.68rem', display: 'block' }}
+                >
+                  {label}
+                </Typography>
+                <Typography variant="body2" fontWeight={600} sx={{ mt: 0.25 }}>
+                  {value}
+                </Typography>
+              </Grid>
+            ))}
+          </Grid>
+        </Card>
+
         {messages.length === 0 && !thinking && (
           <Stack alignItems="center" justifyContent="center" sx={{ flex: 1, opacity: 0.4, py: 6 }} spacing={1}>
             <ManageSearchIcon sx={{ fontSize: 36 }} />

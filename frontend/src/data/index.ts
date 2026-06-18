@@ -19,6 +19,14 @@ export interface DemoAnswer {
   cost:    string
 }
 
+export interface CorpusStats {
+  docs:            number
+  chunks:          number
+  avgChunkTokens:  number
+  embeddingModel:  string
+  indexSizeBytes:  number
+}
+
 export const STAGES: Stage[] = [
   {
     num: 0, name: 'Ingest', alias: 'Suck-inator',
