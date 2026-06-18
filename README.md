@@ -2,6 +2,8 @@
 > Transforms chaotic PDFs, docs, websites, and APIs into trusted answers using embeddings, retrieval, reranking, and LLMs.
 
 
+![](./img/duck-logo.png)
+
 ### Powered by the **Raginator-3000**
 
 ```python
@@ -73,17 +75,21 @@ Start React Frontend
 ```bash
 ./go dev                  # Start UI
 ````
--  Backend start at: [**http://127.0.0.1:8001/**](http://127.0.0.1:8001/)
--  API Documentation [http://127.0.0.1:8001/docs](http://127.0.0.1:8001/docs)
+
+- GUI start at: [**http://localhost:5173/**](http://localhost:5173/)
+
+- ![![Raginator](./img/raginator.png)](http://localhost:5173/)
 
 
 Start Python Backend + RAG Pipeline
 ```bash
 ./go api                  # Start backend (RAG + Bridge)
 ```
-- GUI start at: [**http://localhost:5173/**](http://localhost:5173/)
+-  Backend start at: [**http://127.0.0.1:8001/**](http://127.0.0.1:8001/)
+-  API Documentation [http://127.0.0.1:8001/docs](http://127.0.0.1:8001/docs)
 
-![![Raginator](./img/raginator.png)](http://localhost:5173/)
+- ![![API](./img/api.png)](http://127.0.0.1:8001/docs)
+
 
 The pipeline runs end-to-end with pure-Python/numpy defaults (no GPU, no
 model downloads). 
