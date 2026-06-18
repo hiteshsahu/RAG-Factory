@@ -3,7 +3,7 @@ from __future__ import annotations
 import time
 
 import requests
-from ragfactory.core import GeneratedAnswer, Generator, RetrievedChunk, Settings, StageError
+from raginator.core import GeneratedAnswer, Generator, RetrievedChunk, Settings, StageError
 
 MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions"
 
@@ -30,7 +30,7 @@ class MistralGenerator(Generator):
     def generate(self, query: str, context: list[RetrievedChunk]) -> GeneratedAnswer:
         if not self._api_key:
             raise StageError(
-                "generate", "Mistral API key not set (pass api_key= or set RAGFACTORY_MISTRAL_API_KEY)"
+                "generate", "Mistral API key not set (pass api_key= or set RAGINATOR_MISTRAL_API_KEY)"
             )
 
         start = time.monotonic()

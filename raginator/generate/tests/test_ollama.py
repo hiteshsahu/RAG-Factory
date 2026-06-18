@@ -1,7 +1,7 @@
 from unittest.mock import Mock, patch
 
-from ragfactory.core import Chunk, RetrievedChunk
-from ragfactory.generate import OllamaGenerator
+from raginator.core import Chunk, RetrievedChunk
+from raginator.generate import OllamaGenerator
 
 
 def _context(text: str) -> RetrievedChunk:
@@ -18,7 +18,7 @@ def test_generate_calls_local_ollama_chat_endpoint():
         "prompt_eval_count": 30,
     }
 
-    with patch("ragfactory.generate.ollama.requests.post", return_value=response) as mock_post:
+    with patch("raginator.generate.ollama.requests.post", return_value=response) as mock_post:
         answer = OllamaGenerator().generate(
             "Who built it?", [_context("Doofenshmirtz built the Raginator.")]
         )
@@ -36,7 +36,7 @@ def test_custom_base_url_is_respected():
     response.raise_for_status = Mock()
     response.json.return_value = {"message": {"content": "hi"}}
 
-    with patch("ragfactory.generate.ollama.requests.post", return_value=response) as mock_post:
+    with patch("raginator.generate.ollama.requests.post", return_value=response) as mock_post:
         OllamaGenerator(base_url="http://example.com:11434/").generate("q", [])
 
     args, _ = mock_post.call_args

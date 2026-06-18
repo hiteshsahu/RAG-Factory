@@ -1,8 +1,8 @@
 from unittest.mock import Mock, patch
 
 import pytest
-from ragfactory.core import Chunk, RetrievedChunk, StageError
-from ragfactory.generate import MistralGenerator
+from raginator.core import Chunk, RetrievedChunk, StageError
+from raginator.generate import MistralGenerator
 
 
 def _context(text: str) -> RetrievedChunk:
@@ -18,7 +18,7 @@ def test_generate_calls_mistral_chat_api():
         "usage": {"total_tokens": 42},
     }
 
-    with patch("ragfactory.generate.mistral.requests.post", return_value=response) as mock_post:
+    with patch("raginator.generate.mistral.requests.post", return_value=response) as mock_post:
         answer = MistralGenerator(api_key="test-key").generate(
             "Who built it?", [_context("Doofenshmirtz built the Raginator.")]
         )
@@ -34,7 +34,7 @@ def test_generate_calls_mistral_chat_api():
 
 
 def test_missing_api_key_raises_stage_error(monkeypatch):
-    monkeypatch.delenv("RAGFACTORY_MISTRAL_API_KEY", raising=False)
+    monkeypatch.delenv("RAGINATOR_MISTRAL_API_KEY", raising=False)
 
     with pytest.raises(StageError):
         MistralGenerator().generate("question", [])

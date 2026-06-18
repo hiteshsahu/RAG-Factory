@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ragfactory.core import GeneratedAnswer, Generator, RetrievedChunk
+from raginator.core import GeneratedAnswer, Generator, RetrievedChunk
 
 
 class TemplateGenerator(Generator):

@@ -3,7 +3,7 @@ from __future__ import annotations
 import time
 
 import requests
-from ragfactory.core import GeneratedAnswer, Generator, RetrievedChunk, Settings
+from raginator.core import GeneratedAnswer, Generator, RetrievedChunk, Settings
 
 OLLAMA_CHAT_PATH = "/api/chat"
 

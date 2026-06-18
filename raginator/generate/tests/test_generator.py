@@ -1,5 +1,5 @@
-from ragfactory.core import Chunk, RetrievedChunk
-from ragfactory.generate import TemplateGenerator
+from raginator.core import Chunk, RetrievedChunk
+from raginator.generate import TemplateGenerator
 
 
 def _context(text: str) -> RetrievedChunk:

@@ -3,7 +3,7 @@ from __future__ import annotations
 import time
 
 import requests
-from ragfactory.core import GeneratedAnswer, Generator, RetrievedChunk, Settings, StageError
+from raginator.core import GeneratedAnswer, Generator, RetrievedChunk, Settings, StageError
 
 OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"
 
@@ -29,7 +29,7 @@ class OpenAIGenerator(Generator):
     def generate(self, query: str, context: list[RetrievedChunk]) -> GeneratedAnswer:
         if not self._api_key:
             raise StageError(
-                "generate", "OpenAI API key not set (pass api_key= or set RAGFACTORY_OPENAI_API_KEY)"
+                "generate", "OpenAI API key not set (pass api_key= or set RAGINATOR_OPENAI_API_KEY)"
             )
 
         start = time.monotonic()
