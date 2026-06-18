@@ -8,10 +8,12 @@ import CloseIcon from '@mui/icons-material/Close'
 import LinkIcon from '@mui/icons-material/Link'
 import DescriptionIcon from '@mui/icons-material/Description'
 import ArticleIcon from '@mui/icons-material/Article'
-import { formatBytes } from '../data'
+import { formatBytes, type PipelineSettings } from '../data'
 
 interface Props {
   onStart: (files: File[], urls: string[]) => void
+  settings: PipelineSettings
+  onOpenSettings: () => void
 }
 
 const fmtSize = formatBytes
@@ -22,14 +24,14 @@ const FileIcon = ({ name }: { name: string }) => {
   return <DescriptionIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
 }
 
-const PROVIDER_CHIPS = [
-  { label: 'Embed: Mistral',    color: 'primary'   as const },
-  { label: 'Store: ChromaDB',   color: 'secondary' as const },
-  { label: 'Chunk: Semantic',   color: 'default'   as const },
-  { label: 'Generate: Mistral', color: 'primary'   as const },
+const providerChips = (settings: PipelineSettings) => [
+  { label: `Embed: ${settings.embedProvider}`,  color: 'primary'   as const },
+  { label: `Store: ${settings.vectorStore}`,    color: 'secondary' as const },
+  { label: `Chunk: ${settings.chunkStrategy}`,  color: 'default'   as const },
+  { label: `Generate: ${settings.llmProvider}`, color: 'primary'   as const },
 ]
 
-export default function DropState({ onStart }: Props) {
+export default function DropState({ onStart, settings, onOpenSettings }: Props) {
   const [files, setFiles] = useState<File[]>([])
   const [url, setUrl]     = useState('')
   const [urls, setUrls]   = useState<string[]>([])
@@ -156,10 +158,14 @@ export default function DropState({ onStart }: Props) {
           </Stack>
         )}
 
-        {/* Provider chips */}
+        {/* Provider chips -- click any of them to open pipeline settings */}
         <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="center">
-          {PROVIDER_CHIPS.map(({ label, color }, i) => (
-            <Chip key={i} label={label} size="small" color={color} variant="outlined" />
+          {providerChips(settings).map(({ label, color }, i) => (
+            <Chip
+              key={i} label={label} size="small" color={color} variant="outlined"
+              onClick={onOpenSettings}
+              sx={{ cursor: 'pointer' }}
+            />
           ))}
         </Stack>
 

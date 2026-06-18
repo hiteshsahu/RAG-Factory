@@ -33,6 +33,39 @@ export interface CorpusStats {
   indexSizeBytes:  number
 }
 
+// Mirrors raginator's real stage providers (ragfactory/embed, /generate,
+// /store, /chunk) so picking a provider here is more than cosmetic -- the
+// model names/dims below are the actual defaults from that backend code.
+export type Provider      = 'Mistral' | 'OpenAI' | 'Ollama'
+export type VectorStore   = 'ChromaDB' | 'pgvector'
+export type ChunkStrategy = 'Fixed' | 'Recursive' | 'Semantic' | 'Code'
+
+export interface PipelineSettings {
+  embedProvider: Provider
+  vectorStore:   VectorStore
+  llmProvider:   Provider
+  chunkStrategy: ChunkStrategy
+}
+
+export const DEFAULT_SETTINGS: PipelineSettings = {
+  embedProvider: 'Mistral',
+  vectorStore: 'ChromaDB',
+  llmProvider: 'Mistral',
+  chunkStrategy: 'Semantic',
+}
+
+export const EMBED_MODELS: Record<Provider, { name: string; dim: number }> = {
+  Mistral: { name: 'mistral-embed', dim: 1024 },
+  OpenAI:  { name: 'text-embedding-3-small', dim: 1536 },
+  Ollama:  { name: 'nomic-embed-text', dim: 768 },
+}
+
+export const LLM_MODELS: Record<Provider, string> = {
+  Mistral: 'mistral-small-latest',
+  OpenAI: 'gpt-4o-mini',
+  Ollama: 'llama3.2',
+}
+
 export const STAGES: Stage[] = [
   {
     num: 0, name: 'Ingest', alias: 'Suck-inator',

@@ -7,10 +7,14 @@ import type { PaletteMode } from '@mui/material'
 import LightModeIcon from '@mui/icons-material/LightMode'
 import DarkModeIcon from '@mui/icons-material/DarkMode'
 import getTheme from './theme'
-import { STAGES, formatBytes, type CorpusStats } from './data'
+import {
+  STAGES, formatBytes, DEFAULT_SETTINGS, EMBED_MODELS, LLM_MODELS,
+  type CorpusStats, type PipelineSettings,
+} from './data'
 import DropState from './components/DropState'
 import ProcessState from './components/ProcessState'
 import ChatState from './components/ChatState'
+import SettingsDrawer from './components/SettingsDrawer'
 
 type AppState = 'drop' | 'process' | 'chat'
 
@@ -21,10 +25,10 @@ const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
 // Demo-only: simulates real pipelines failing partway through, so the UI's
 // error handling is actually exercised instead of always happy-pathing.
 const FAILURE_RATE = 0.3
-const EMBEDDING_MODEL = 'Mistral mistral-embed · 1024-dim'
-const EMBEDDING_DIM = 1024
 const FALLBACK_CORPUS_STATS: CorpusStats = {
-  docs: 0, chunks: 0, avgChunkTokens: 0, embeddingModel: EMBEDDING_MODEL, indexSizeBytes: 0,
+  docs: 0, chunks: 0, avgChunkTokens: 0,
+  embeddingModel: `${EMBED_MODELS.Mistral.name} · ${EMBED_MODELS.Mistral.dim}-dim`,
+  indexSizeBytes: 0,
 }
 
 export default function App() {
@@ -36,6 +40,8 @@ export default function App() {
   const [stageStats, setStageStats] = useState<Record<number, string>>({})
   const [corpusStats, setCorpusStats] = useState<CorpusStats | null>(null)
   const [corpusName, setCorpusName] = useState('')
+  const [settings, setSettings] = useState<PipelineSettings>(DEFAULT_SETTINGS)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [mode, setMode] = useState<PaletteMode>('dark')
   const theme = useMemo(() => getTheme(mode), [mode])
   const cancelRef = useRef(false)
@@ -68,7 +74,6 @@ export default function App() {
     const sourceLabel = files.length
       ? `${files.length} file${files.length === 1 ? '' : 's'} · ${formatBytes(totalBytes)}`
       : `${urls.length} URL${urls.length === 1 ? '' : 's'}`
-    setStageStats({ 0: sourceLabel })
 
     // Chunks/index size are derived from the real byte count (~1.4 KB of
     // text per chunk) rather than a fixed demo number, so they scale with
@@ -77,12 +82,13 @@ export default function App() {
     const estimatedBytes = files.length ? totalBytes : urls.length * 50_000
     const chunkCount = Math.max(itemCount, Math.round(estimatedBytes / 1400))
     const avgChunkTokens = 312
+    const embedModel = EMBED_MODELS[settings.embedProvider]
     const newCorpusStats: CorpusStats = {
       docs: itemCount,
       chunks: chunkCount,
       avgChunkTokens,
-      embeddingModel: EMBEDDING_MODEL,
-      indexSizeBytes: chunkCount * EMBEDDING_DIM * 4, // float32 vectors
+      embeddingModel: `${embedModel.name} · ${embedModel.dim}-dim`,
+      indexSizeBytes: chunkCount * embedModel.dim * 4, // float32 vectors
     }
 
     const ingestLogs = files.length
@@ -97,6 +103,41 @@ export default function App() {
           `${itemCount} RawDocument object${itemCount === 1 ? '' : 's'} extracted`,
         ]
 
+    // Per-stage overrides driven by the chosen settings, so picking a
+    // provider in the drawer actually changes what the run shows -- not
+    // just the next one but the rest of this (still-scripted) pipeline too.
+    const stageLogOverrides: Record<number, string[]> = {
+      0: ingestLogs,
+      1: [
+        `${settings.chunkStrategy} chunker init…`,
+        'Splitting documents…',
+        `${itemCount} docs → ${chunkCount.toLocaleString()} chunks`,
+      ],
+      2: [
+        `${settings.embedProvider} embed API ready (${embedModel.name})`,
+        `Embedding ${chunkCount.toLocaleString()} chunks…`,
+        'Done',
+      ],
+      3: [
+        `${settings.vectorStore} collection created`,
+        'Inserting vectors…',
+        `${chunkCount.toLocaleString()} persisted`,
+      ],
+      6: [
+        `${settings.llmProvider} API connected (${LLM_MODELS[settings.llmProvider]})`,
+        'Self-RAG strategy loaded',
+        'Generator ready',
+      ],
+    }
+    const stageStatOverrides: Record<number, string> = {
+      0: sourceLabel,
+      1: `${chunkCount.toLocaleString()} chunks · avg ${avgChunkTokens} tok`,
+      2: `dim=${embedModel.dim} · ${settings.embedProvider}`,
+      3: `${settings.vectorStore} · ${chunkCount.toLocaleString()} vectors`,
+      6: `${LLM_MODELS[settings.llmProvider]} · Self-RAG`,
+    }
+    setStageStats(stageStatOverrides)
+
     const failAt = Math.random() < FAILURE_RATE
       ? Math.floor(Math.random() * STAGES.length)
       : -1
@@ -104,7 +145,7 @@ export default function App() {
     for (let i = 0; i < STAGES.length; i++) {
       if (cancelRef.current) return
       setActiveStage(i)
-      const stageLogs = i === 0 ? ingestLogs : STAGES[i].logs.map(l => l.replace(/247/g, String(itemCount)))
+      const stageLogs = stageLogOverrides[i] ?? STAGES[i].logs.map(l => l.replace(/247/g, String(itemCount)))
       for (const log of stageLogs) {
         if (cancelRef.current) return
         await sleep(300)
@@ -163,9 +204,10 @@ export default function App() {
               Raginator
             </Typography>
             <Chip
-              label="Mistral · ChromaDB"
+              label={`${settings.embedProvider} · ${settings.vectorStore}`}
               size="small" variant="outlined"
-              sx={{ fontFamily: '"JetBrains Mono",monospace', fontSize: '0.68rem' }}
+              onClick={() => setSettingsOpen(true)}
+              sx={{ fontFamily: '"JetBrains Mono",monospace', fontSize: '0.68rem', cursor: 'pointer' }}
             />
             <Chip
               label={statusLabel}
@@ -185,7 +227,7 @@ export default function App() {
         </AppBar>
 
         {appState === 'drop' && (
-          <DropState onStart={runPipeline} />
+          <DropState onStart={runPipeline} settings={settings} onOpenSettings={() => setSettingsOpen(true)} />
         )}
 
         {appState === 'process' && (
@@ -209,6 +251,13 @@ export default function App() {
         )}
 
       </Box>
+
+      <SettingsDrawer
+        open={settingsOpen}
+        settings={settings}
+        onChange={setSettings}
+        onClose={() => setSettingsOpen(false)}
+      />
     </ThemeProvider>
   )
 }
