@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from ragfactory.ingest import TextFileIngestor
+from raginator.ingest import TextFileIngestor
 
 
 def test_ingest_reads_all_text_files(tmp_path: Path):

@@ -5,7 +5,7 @@ from collections.abc import Iterable
 from typing import Any
 
 import requests
-from ragfactory.core import Ingestor, RawDocument, Settings
+from raginator.core import Ingestor, RawDocument, Settings
 
 GITHUB_API = "https://api.github.com"
 

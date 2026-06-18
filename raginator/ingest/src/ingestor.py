@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from pathlib import Path
 
-from ragfactory.core import Ingestor, RawDocument
+from raginator.core import Ingestor, RawDocument
 
 
 class TextFileIngestor(Ingestor):

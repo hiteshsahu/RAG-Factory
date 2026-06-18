@@ -4,7 +4,7 @@ from collections.abc import Iterable
 from pathlib import Path
 
 from pypdf import PdfReader
-from ragfactory.core import Ingestor, RawDocument
+from raginator.core import Ingestor, RawDocument
 
 
 class PDFIngestor(Ingestor):

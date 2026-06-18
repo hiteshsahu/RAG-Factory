@@ -1,7 +1,7 @@
 from io import BytesIO
 from typing import Any
 
-from ragfactory.ingest import S3Ingestor
+from raginator.ingest import S3Ingestor
 
 
 class FakePaginator:

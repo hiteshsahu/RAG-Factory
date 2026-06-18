@@ -4,7 +4,7 @@ from collections.abc import Iterable
 
 import requests
 from bs4 import BeautifulSoup
-from ragfactory.core import Ingestor, RawDocument
+from raginator.core import Ingestor, RawDocument
 
 
 class WebIngestor(Ingestor):

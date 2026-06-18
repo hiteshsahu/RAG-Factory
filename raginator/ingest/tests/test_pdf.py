@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from ragfactory.ingest import PDFIngestor
+from raginator.ingest import PDFIngestor
 from reportlab.pdfgen import canvas
 
 

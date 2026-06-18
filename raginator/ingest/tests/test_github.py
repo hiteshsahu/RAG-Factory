@@ -1,7 +1,7 @@
 import base64
 from unittest.mock import Mock, patch
 
-from ragfactory.ingest import GitHubIngestor
+from raginator.ingest import GitHubIngestor
 
 
 def test_github_ingestor_fetches_only_markdown_files():
@@ -22,7 +22,7 @@ def test_github_ingestor_fetches_only_markdown_files():
     }
 
     with patch(
-        "ragfactory.ingest.github.requests.get", side_effect=[tree_response, blob_response]
+        "raginator.ingest.github.requests.get", side_effect=[tree_response, blob_response]
     ) as mock_get:
         [document] = list(GitHubIngestor("owner", "repo", token="x").ingest())
 
@@ -33,7 +33,7 @@ def test_github_ingestor_fetches_only_markdown_files():
 
 
 def test_github_ingestor_uses_settings_token_by_default(monkeypatch):
-    monkeypatch.setenv("RAGFACTORY_GITHUB_TOKEN", "from-env")
+    monkeypatch.setenv("RAGINATOR_GITHUB_TOKEN", "from-env")
 
     ingestor = GitHubIngestor("owner", "repo")
 

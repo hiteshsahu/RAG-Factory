@@ -1,6 +1,6 @@
 from unittest.mock import Mock, patch
 
-from ragfactory.ingest import WebIngestor
+from raginator.ingest import WebIngestor
 
 
 def test_web_ingestor_strips_html_and_scripts():
@@ -8,7 +8,7 @@ def test_web_ingestor_strips_html_and_scripts():
     response = Mock(text=html, status_code=200)
     response.raise_for_status = Mock()
 
-    with patch("ragfactory.ingest.web.requests.get", return_value=response) as mock_get:
+    with patch("raginator.ingest.web.requests.get", return_value=response) as mock_get:
         [document] = list(WebIngestor(["https://example.com"]).ingest())
 
     mock_get.assert_called_once_with("https://example.com", timeout=10.0)

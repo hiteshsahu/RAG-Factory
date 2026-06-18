@@ -4,7 +4,7 @@ from collections.abc import Iterable
 from typing import Any
 
 import boto3
-from ragfactory.core import Ingestor, RawDocument
+from raginator.core import Ingestor, RawDocument
 
 
 class S3Ingestor(Ingestor):
