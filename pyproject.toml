@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ragfactory"
+name = "raginator"
 version = "0.1.0"
 description = "RAG Factory -- modular pipeline for turning documents into trusted answers"
 requires-python = ">=3.12"
@@ -61,12 +61,12 @@ pipeline = []
 
 # Install every stage + the orchestrator
 all = [
-    "ragfactory[core,ingest,chunk,embed,store,retrieve,rerank,generate,evaluate,observe,pipeline]",
+    "raginator[core,ingest,chunk,embed,store,retrieve,rerank,generate,evaluate,observe,pipeline]",
 ]
 
 # Dev / CI
 dev = [
-    "ragfactory[all]",
+    "raginator[all]",
     "pytest>=8.0.0",
     "ruff>=0.4.0",
     "mypy>=1.9.0",
@@ -74,39 +74,39 @@ dev = [
     "opentelemetry-sdk>=1.20",  # in-memory span exporter for test_tracing.py
 ]
 
-# One distribution, code organized by stage under ragfactory/<stage>/src/ --
+# One distribution, code organized by stage under raginator/<stage>/src/ --
 # map each dotted subpackage to its stage folder's flat src/ (no redundant
-# nested ragfactory/<stage>/ folder inside it).
+# nested raginator/<stage>/ folder inside it).
 [tool.setuptools]
 packages = [
-    "ragfactory.core",
-    "ragfactory.ingest",
-    "ragfactory.chunk",
-    "ragfactory.embed",
-    "ragfactory.store",
-    "ragfactory.retrieve",
-    "ragfactory.rerank",
-    "ragfactory.generate",
-    "ragfactory.evaluate",
-    "ragfactory.observe",
-    "ragfactory.pipeline",
+    "raginator.core",
+    "raginator.ingest",
+    "raginator.chunk",
+    "raginator.embed",
+    "raginator.store",
+    "raginator.retrieve",
+    "raginator.rerank",
+    "raginator.generate",
+    "raginator.evaluate",
+    "raginator.observe",
+    "raginator.pipeline",
 ]
 
 [tool.setuptools.package-dir]
-"ragfactory.core" = "ragfactory/core/src"
-"ragfactory.ingest" = "ragfactory/ingest/src"
-"ragfactory.chunk" = "ragfactory/chunk/src"
-"ragfactory.embed" = "ragfactory/embed/src"
-"ragfactory.store" = "ragfactory/store/src"
-"ragfactory.retrieve" = "ragfactory/retrieve/src"
-"ragfactory.rerank" = "ragfactory/rerank/src"
-"ragfactory.generate" = "ragfactory/generate/src"
-"ragfactory.evaluate" = "ragfactory/evaluate/src"
-"ragfactory.observe" = "ragfactory/observe/src"
-"ragfactory.pipeline" = "ragfactory/pipeline/src"
+"raginator.core" = "raginator/core/src"
+"raginator.ingest" = "raginator/ingest/src"
+"raginator.chunk" = "raginator/chunk/src"
+"raginator.embed" = "raginator/embed/src"
+"raginator.store" = "raginator/store/src"
+"raginator.retrieve" = "raginator/retrieve/src"
+"raginator.rerank" = "raginator/rerank/src"
+"raginator.generate" = "raginator/generate/src"
+"raginator.evaluate" = "raginator/evaluate/src"
+"raginator.observe" = "raginator/observe/src"
+"raginator.pipeline" = "raginator/pipeline/src"
 
 [tool.ruff]
-src = ["ragfactory"]
+src = ["raginator"]
 line-length = 100
 target-version = "py312"
 
@@ -119,7 +119,7 @@ python_version = "3.12"
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
-testpaths = ["ragfactory"]
+testpaths = ["raginator"]
 # Several stages have provider files with the same basename (e.g. mistral.py
 # under both embed/ and rerank/), and none of the tests/ dirs are packages
 # (no __init__.py). importlib mode keys imports by full path instead of a
