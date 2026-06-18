@@ -12,9 +12,9 @@ def test_dashboard_json_is_valid_and_references_known_metrics():
         target["expr"] for panel in dashboard["panels"] for target in panel["targets"]
     )
     for metric in (
-        "ragfactory_index_requests_total",
-        "ragfactory_indexed_chunks_total",
-        "ragfactory_query_requests_total",
-        "ragfactory_query_score_bucket",
+        "raginator_index_requests_total",
+        "raginator_indexed_chunks_total",
+        "raginator_query_requests_total",
+        "raginator_query_score_bucket",
     ):
         assert metric in panel_exprs

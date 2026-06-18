@@ -5,9 +5,9 @@ import logging
 from datetime import UTC, datetime
 from typing import Any
 
-from ragfactory.core import Observer
+from raginator.core import Observer
 
-logger = logging.getLogger("ragfactory")
+logger = logging.getLogger("raginator")
 
 
 class JSONFormatter(logging.Formatter):

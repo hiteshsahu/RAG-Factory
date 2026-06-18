@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import logging
 
-from ragfactory.core import Observer
+from raginator.core import Observer
 
-logger = logging.getLogger("ragfactory")
+logger = logging.getLogger("raginator")
 
 
 class LoggingObserver(Observer):

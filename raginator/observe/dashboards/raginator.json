@@ -3,7 +3,7 @@
   "uid": "raginator-3000",
   "schemaVersion": 39,
   "version": 1,
-  "tags": ["ragfactory", "raginator"],
+  "tags": ["raginator", "raginator"],
   "time": { "from": "now-6h", "to": "now" },
   "refresh": "30s",
   "templating": {
@@ -25,7 +25,7 @@
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
       "targets": [
         {
-          "expr": "rate(ragfactory_index_requests_total[5m])",
+          "expr": "rate(raginator_index_requests_total[5m])",
           "legendFormat": "index requests/s"
         }
       ]
@@ -38,7 +38,7 @@
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
       "targets": [
         {
-          "expr": "ragfactory_indexed_chunks_total",
+          "expr": "raginator_indexed_chunks_total",
           "legendFormat": "chunks indexed"
         }
       ]
@@ -51,7 +51,7 @@
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
       "targets": [
         {
-          "expr": "rate(ragfactory_query_requests_total[5m])",
+          "expr": "rate(raginator_query_requests_total[5m])",
           "legendFormat": "query requests/s"
         }
       ]
@@ -64,11 +64,11 @@
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
       "targets": [
         {
-          "expr": "histogram_quantile(0.5, rate(ragfactory_query_score_bucket[5m]))",
+          "expr": "histogram_quantile(0.5, rate(raginator_query_score_bucket[5m]))",
           "legendFormat": "p50"
         },
         {
-          "expr": "histogram_quantile(0.95, rate(ragfactory_query_score_bucket[5m]))",
+          "expr": "histogram_quantile(0.95, rate(raginator_query_score_bucket[5m]))",
           "legendFormat": "p95"
         }
       ]

@@ -1,7 +1,7 @@
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
-from ragfactory.observe import OpenTelemetryObserver
+from raginator.observe import OpenTelemetryObserver
 
 
 def _tracer_with_exporter():

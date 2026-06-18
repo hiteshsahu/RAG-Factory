@@ -4,7 +4,7 @@ from typing import Any
 
 from opentelemetry import trace
 from opentelemetry.trace import Tracer
-from ragfactory.core import Observer
+from raginator.core import Observer
 
 
 class OpenTelemetryObserver(Observer):
@@ -18,7 +18,7 @@ class OpenTelemetryObserver(Observer):
     """
 
     def __init__(self, tracer: Tracer | None = None) -> None:
-        self._tracer = tracer if tracer is not None else trace.get_tracer("ragfactory")
+        self._tracer = tracer if tracer is not None else trace.get_tracer("raginator")
 
     def record(self, event: str, **data: Any) -> None:
         attributes = {key: _coerce(value) for key, value in data.items()}

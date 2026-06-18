@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from prometheus_client import CollectorRegistry, Counter, Histogram
-from ragfactory.core import Observer
+from raginator.core import Observer
 
 
 class PrometheusObserver(Observer):
@@ -17,22 +17,22 @@ class PrometheusObserver(Observer):
     def __init__(self, registry: CollectorRegistry | None = None) -> None:
         self.registry = registry if registry is not None else CollectorRegistry()
         self._index_requests = Counter(
-            "ragfactory_index_requests_total",
+            "raginator_index_requests_total",
             "Total indexing operations",
             registry=self.registry,
         )
         self._indexed_chunks = Counter(
-            "ragfactory_indexed_chunks_total",
+            "raginator_indexed_chunks_total",
             "Total chunks indexed",
             registry=self.registry,
         )
         self._query_requests = Counter(
-            "ragfactory_query_requests_total",
+            "raginator_query_requests_total",
             "Total query operations",
             registry=self.registry,
         )
         self._query_score = Histogram(
-            "ragfactory_query_score",
+            "raginator_query_score",
             "Evaluator score distribution for queries",
             registry=self.registry,
         )

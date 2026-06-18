@@ -1,11 +1,11 @@
 import json
 import logging
 
-from ragfactory.observe import JSONFormatter, StructuredLogObserver
+from raginator.observe import JSONFormatter, StructuredLogObserver
 
 
 def test_record_logs_event_with_structured_data(caplog):
-    with caplog.at_level(logging.INFO, logger="ragfactory"):
+    with caplog.at_level(logging.INFO, logger="raginator"):
         StructuredLogObserver().record("indexed", chunk_count=3)
 
     [record] = caplog.records
@@ -15,7 +15,7 @@ def test_record_logs_event_with_structured_data(caplog):
 def test_json_formatter_renders_valid_json():
     formatter = JSONFormatter()
     record = logging.LogRecord(
-        name="ragfactory",
+        name="raginator",
         level=logging.INFO,
         pathname="",
         lineno=0,
