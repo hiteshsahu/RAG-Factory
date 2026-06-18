@@ -76,6 +76,8 @@ Start React Frontend
 -  Backend start at: [**http://127.0.0.1:8001/**](http://127.0.0.1:8001/)
 -  API Documentation [http://127.0.0.1:8001/docs](http://127.0.0.1:8001/docs)
 
+![Raginator](./img/raginator.png)
+
 Start Python Backend + RAG Pipeline
 ```bash
 ./go api                  # Start backend (RAG + Bridge)
@@ -129,7 +131,6 @@ the panels have live data to show instead of "No data".
 ./go typecheck            # mypy, run per stage (see note below)
 ./go check                # lint + typecheck + test
 ```
-
 
 > **Note:** `./go typecheck` runs mypy once per stage rather than once for
 > the whole tree. Every stage's source dir is named plain `src` (that's the
