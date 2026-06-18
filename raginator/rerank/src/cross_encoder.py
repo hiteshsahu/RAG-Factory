@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 import requests
-from ragfactory.core import Reranker, RetrievedChunk, Settings, StageError
+from raginator.core import Reranker, RetrievedChunk, Settings, StageError
 
 HUGGINGFACE_API_URL = "https://api-inference.huggingface.co/models/{model}"
 
@@ -33,7 +33,7 @@ class CrossEncoderReranker(Reranker):
         if not self._api_key:
             raise StageError(
                 "rerank",
-                "HuggingFace API key not set (pass api_key= or set RAGFACTORY_HUGGINGFACE_API_KEY)",
+                "HuggingFace API key not set (pass api_key= or set RAGINATOR_HUGGINGFACE_API_KEY)",
             )
 
         response = requests.post(

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import requests
-from ragfactory.core import Reranker, RetrievedChunk, Settings, StageError
+from raginator.core import Reranker, RetrievedChunk, Settings, StageError
 
 MISTRAL_RERANK_API_URL = "https://api.mistral.ai/v1/rerank"
 
@@ -31,7 +31,7 @@ class MistralReranker(Reranker):
             return []
         if not self._api_key:
             raise StageError(
-                "rerank", "Mistral API key not set (pass api_key= or set RAGFACTORY_MISTRAL_API_KEY)"
+                "rerank", "Mistral API key not set (pass api_key= or set RAGINATOR_MISTRAL_API_KEY)"
             )
 
         response = requests.post(

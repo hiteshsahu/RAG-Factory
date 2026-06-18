@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ragfactory.core import Reranker, RetrievedChunk
+from raginator.core import Reranker, RetrievedChunk
 
 
 class IdentityReranker(Reranker):

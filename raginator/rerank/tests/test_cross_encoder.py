@@ -1,8 +1,8 @@
 from unittest.mock import Mock, patch
 
 import pytest
-from ragfactory.core import Chunk, RetrievedChunk, StageError
-from ragfactory.rerank import CrossEncoderReranker
+from raginator.core import Chunk, RetrievedChunk, StageError
+from raginator.rerank import CrossEncoderReranker
 
 
 def _candidate(chunk_id: str, content: str, rank: int) -> RetrievedChunk:
@@ -19,7 +19,7 @@ def test_rerank_orders_by_cross_encoder_score():
         [{"label": "LABEL_0", "score": 0.9}],
     ]
 
-    with patch("ragfactory.rerank.cross_encoder.requests.post", return_value=response) as mock_post:
+    with patch("raginator.rerank.cross_encoder.requests.post", return_value=response) as mock_post:
         reranked = CrossEncoderReranker(api_key="test-key").rerank("query", candidates)
 
     assert [c.chunk.chunk_id for c in reranked] == ["b", "a"]
@@ -33,7 +33,7 @@ def test_empty_candidates_returns_empty():
 
 
 def test_missing_api_key_raises_stage_error(monkeypatch):
-    monkeypatch.delenv("RAGFACTORY_HUGGINGFACE_API_KEY", raising=False)
+    monkeypatch.delenv("RAGINATOR_HUGGINGFACE_API_KEY", raising=False)
     candidates = [_candidate("a", "text", 0)]
 
     with pytest.raises(StageError):

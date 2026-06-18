@@ -1,5 +1,5 @@
-from ragfactory.core import Chunk, RetrievedChunk
-from ragfactory.rerank import IdentityReranker
+from raginator.core import Chunk, RetrievedChunk
+from raginator.rerank import IdentityReranker
 
 
 def test_identity_reranker_preserves_order():
