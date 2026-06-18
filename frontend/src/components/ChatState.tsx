@@ -35,6 +35,7 @@ const STAT_ITEMS = (stats: CorpusStats) => [
 ]
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
+const IS_MAC = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
 
 export default function ChatState({ corpusName, stats, onReset }: Props) {
   const [messages, setMessages] = useState<Message[]>([])
@@ -42,7 +43,9 @@ export default function ChatState({ corpusName, stats, onReset }: Props) {
   const [thinking, setThinking] = useState(false)
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null)
   const [previewSource, setPreviewSource] = useState<SourceChunk | null>(null)
+  const [inputFocused, setInputFocused] = useState(false)
   const chatRef = useRef<HTMLDivElement>(null)
+  const queryInputRef = useRef<HTMLInputElement>(null)
 
   const copyMessage = (text: string, index: number) => {
     navigator.clipboard.writeText(text)
@@ -53,6 +56,18 @@ export default function ChatState({ corpusName, stats, onReset }: Props) {
   useEffect(() => {
     if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight
   }, [messages, thinking])
+
+  // Cmd/Ctrl+K focuses the query box from anywhere on the page.
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        queryInputRef.current?.focus()
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [])
 
   const sendMessage = async (q?: string) => {
     const text = (q ?? query).trim()
@@ -211,7 +226,22 @@ export default function ChatState({ corpusName, stats, onReset }: Props) {
             placeholder="Ask a question about your documents…"
             value={query}
             onChange={e => setQuery(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() } }}
+            onFocus={() => setInputFocused(true)}
+            onBlur={() => setInputFocused(false)}
+            onKeyDown={e => {
+              if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() }
+              else if (e.key === 'Escape') { setQuery('') }
+            }}
+            inputRef={queryInputRef}
+            InputProps={{
+              endAdornment: !inputFocused && !query && (
+                <Chip
+                  label={IS_MAC ? '⌘K' : 'Ctrl K'}
+                  size="small" variant="outlined"
+                  sx={{ fontFamily: '"JetBrains Mono",monospace', fontSize: '0.65rem', height: 20, color: 'text.secondary', pointerEvents: 'none' }}
+                />
+              ),
+            }}
           />
           <IconButton
             color="primary"
