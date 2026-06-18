@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Raginator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0d0f;--bg2:#141418;--bg3:#1a1a20;--bg4:#202026;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);--border3:rgba(255,255,255,0.2);
+  --text:#e8e8f0;--muted:#888898;--hint:#44444f;
+  --teal:#1D9E75;--teal-dim:rgba(29,158,117,0.15);--teal-b:rgba(29,158,117,0.35);
+  --purple:#7F77DD;--purple-dim:rgba(127,119,221,0.12);--purple-b:rgba(127,119,221,0.3);
+  --amber:#EF9F27;--amber-dim:rgba(239,159,39,0.12);--amber-b:rgba(239,159,39,0.3);
+  --blue:#378ADD;--blue-dim:rgba(55,138,221,0.12);--blue-b:rgba(55,138,221,0.3);
+  --red:#E24B4A;--red-dim:rgba(226,75,74,0.12);
+  --mono:'JetBrains Mono',monospace;
+  --r:8px;--rl:12px;--rxl:16px;
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.6;overflow-x:hidden}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* ── Nav ── */
+nav{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:0.5px solid var(--border);position:sticky;top:0;z-index:100;background:rgba(13,13,15,0.92);backdrop-filter:blur(12px)}
+.logo{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600;letter-spacing:-0.02em}
+.logo-dot{width:8px;height:8px;border-radius:50%;background:var(--teal)}
+.nav-right{display:flex;align-items:center;gap:12px}
+.nav-badge{font-size:11px;font-family:var(--mono);padding:3px 9px;border-radius:20px;border:0.5px solid var(--border2);color:var(--muted)}
+.nav-status{font-size:11px;font-family:var(--mono);padding:3px 9px;border-radius:20px;display:flex;align-items:center;gap:5px}
+.nav-status.idle{border:0.5px solid var(--border2);color:var(--muted)}
+.nav-status.running{border:0.5px solid var(--teal-b);color:var(--teal);background:var(--teal-dim)}
+.nav-status.ready{border:0.5px solid var(--teal-b);color:var(--teal);background:var(--teal-dim)}
+.pulse{width:6px;height:6px;border-radius:50%;background:currentColor;animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--r);font-size:13px;font-weight:500;cursor:pointer;border:0.5px solid var(--border2);background:transparent;color:var(--text);transition:all .15s;font-family:'Inter',sans-serif}
+.btn:hover{background:var(--bg3);border-color:var(--border3)}
+.btn-primary{background:var(--teal);border-color:var(--teal);color:#fff}
+.btn-primary:hover{background:#18b887;border-color:#18b887}
+.btn-ghost{border-color:transparent;color:var(--muted)}
+.btn-ghost:hover{color:var(--text);background:var(--bg3);border-color:var(--border)}
+
+/* ════════════════════════════════
+   STATE 1 — DROP
+════════════════════════════════ */
+#state-drop{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 57px);padding:40px 24px}
+.drop-inner{width:100%;max-width:560px}
+.drop-eyebrow{font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);text-align:center;margin-bottom:12px}
+.drop-h1{font-size:32px;font-weight:600;letter-spacing:-0.03em;text-align:center;margin-bottom:8px;line-height:1.2}
+.drop-sub{font-size:14px;color:var(--muted);text-align:center;margin-bottom:36px}
+
+.dropzone{border:1.5px dashed var(--border2);border-radius:var(--rxl);padding:48px 32px;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg2);position:relative;margin-bottom:16px}
+.dropzone:hover,.dropzone.dragover{border-color:var(--teal);background:var(--teal-dim)}
+.dropzone-icon{font-size:32px;margin-bottom:12px;opacity:.5}
+.dropzone h3{font-size:15px;font-weight:500;margin-bottom:6px}
+.dropzone p{font-size:12px;color:var(--muted)}
+.dropzone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+
+.drop-divider{display:flex;align-items:center;gap:12px;margin:16px 0;color:var(--hint);font-size:12px}
+.drop-divider::before,.drop-divider::after{content:'';flex:1;height:0.5px;background:var(--border)}
+
+.url-row{display:flex;gap:8px}
+.url-input{flex:1;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--r);padding:10px 14px;font-size:13px;color:var(--text);font-family:'Inter',sans-serif;outline:none;transition:border-color .15s}
+.url-input::placeholder{color:var(--hint)}
+.url-input:focus{border-color:var(--teal)}
+
+.file-list{margin-top:16px;display:flex;flex-direction:column;gap:6px}
+.file-item{display:flex;align-items:center;gap:10px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);padding:8px 12px}
+.file-icon{font-size:16px;width:24px;text-align:center;color:var(--muted)}
+.file-name{flex:1;font-size:12px;font-family:var(--mono);color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-size{font-size:11px;color:var(--hint);font-family:var(--mono)}
+.file-remove{cursor:pointer;color:var(--hint);font-size:16px;padding:0 4px;line-height:1;background:none;border:none;color:var(--hint)}
+.file-remove:hover{color:var(--red)}
+
+.config-row{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+.config-pill{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;border:0.5px solid var(--border2);background:var(--bg2);font-size:11px;color:var(--muted);cursor:pointer;transition:all .15s}
+.config-pill:hover{border-color:var(--border3);color:var(--text)}
+.config-pill .dot{width:6px;height:6px;border-radius:50%}
+
+.start-btn{width:100%;margin-top:20px;padding:12px;font-size:14px;justify-content:center;border-radius:var(--rl)}
+
+/* ════════════════════════════════
+   STATE 2 — PROCESSING
+════════════════════════════════ */
+#state-process{display:none;flex-direction:column;min-height:calc(100vh - 57px)}
+.process-top{padding:24px;border-bottom:0.5px solid var(--border);background:var(--bg2)}
+.process-files{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.pf-chip{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;background:var(--bg3);border:0.5px solid var(--border2);font-size:11px;font-family:var(--mono);color:var(--muted)}
+.process-overall{display:flex;align-items:center;gap:12px}
+.overall-bar-wrap{flex:1;height:4px;background:var(--bg4);border-radius:2px;overflow:hidden}
+.overall-bar{height:100%;background:var(--teal);border-radius:2px;transition:width .4s ease;width:0%}
+.overall-label{font-size:11px;font-family:var(--mono);color:var(--muted);white-space:nowrap}
+
+.stages-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:24px;flex:1}
+@media(max-width:700px){.stages-grid{grid-template-columns:repeat(2,1fr)}}
+.stage-tile{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rl);padding:16px;transition:all .3s}
+.stage-tile.done{border-color:var(--teal-b);background:var(--teal-dim)}
+.stage-tile.active{border-color:var(--teal-b);background:var(--bg3)}
+.stage-tile.waiting{opacity:.4}
+.st-num{font-size:10px;font-family:var(--mono);color:var(--hint);margin-bottom:8px}
+.stage-tile.done .st-num,.stage-tile.active .st-num{color:var(--teal)}
+.st-name{font-size:13px;font-weight:500;margin-bottom:4px}
+.st-alias{font-size:11px;color:var(--hint);font-family:var(--mono);margin-bottom:10px}
+.st-stat{font-size:12px;color:var(--muted);font-family:var(--mono)}
+.stage-tile.done .st-stat{color:var(--teal)}
+.st-bar-wrap{height:2px;background:var(--bg4);border-radius:1px;overflow:hidden;margin-top:12px}
+.st-bar{height:100%;background:var(--teal);border-radius:1px;width:0%;transition:width .3s}
+.st-check{display:none;font-size:14px;margin-top:8px;color:var(--teal)}
+.stage-tile.done .st-check{display:block}
+.stage-tile.done .st-bar-wrap{display:none}
+
+.log-panel{margin:0 24px 24px;background:#080809;border:0.5px solid var(--border);border-radius:var(--rl);padding:12px 16px;font-family:var(--mono);font-size:11px;line-height:1.8;max-height:140px;overflow-y:auto}
+.log-line{color:var(--hint)}
+.log-line.ok{color:var(--teal)}
+.log-line.info{color:var(--muted)}
+
+/* ════════════════════════════════
+   STATE 3 — CHAT
+════════════════════════════════ */
+#state-chat{display:none;flex-direction:column;height:calc(100vh - 57px)}
+.chat-sidebar{display:none}
+
+.corpus-bar{display:flex;align-items:center;gap:12px;padding:10px 24px;border-bottom:0.5px solid var(--border);background:var(--bg2);flex-wrap:wrap;gap:8px}
+.corpus-chip{display:flex;align-items:center;gap:6px;padding:3px 10px;border-radius:20px;background:var(--teal-dim);border:0.5px solid var(--teal-b);font-size:11px;font-family:var(--mono);color:var(--teal)}
+.corpus-stats{display:flex;gap:16px;margin-left:auto}
+.cs-item{font-size:11px;color:var(--muted);font-family:var(--mono)}
+.cs-item span{color:var(--text)}
+.reset-btn{font-size:11px;color:var(--hint);cursor:pointer;padding:3px 8px;border-radius:var(--r);border:0.5px solid var(--border);background:none;font-family:'Inter',sans-serif}
+.reset-btn:hover{color:var(--red);border-color:var(--red-dim)}
+
+.chat-body{flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:20px}
+.chat-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:16px;opacity:.5;padding:40px}
+.chat-empty-icon{font-size:32px}
+.chat-empty p{font-size:13px;color:var(--muted);text-align:center}
+
+.msg{display:flex;flex-direction:column;gap:8px;max-width:680px}
+.msg-user{align-self:flex-end;align-items:flex-end}
+.msg-bot{align-self:flex-start;align-items:flex-start}
+.msg-bubble{padding:12px 16px;border-radius:var(--rl);font-size:13px;line-height:1.7}
+.msg-user .msg-bubble{background:var(--teal);color:#fff;border-radius:var(--rl) var(--rl) 4px var(--rl)}
+.msg-bot .msg-bubble{background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--rl) var(--rl) var(--rl) 4px}
+.msg-meta{font-size:11px;color:var(--hint);font-family:var(--mono);display:flex;gap:12px;padding:0 4px}
+.msg-sources{display:flex;gap:6px;flex-wrap:wrap;padding:0 4px}
+.source-chip{font-size:10px;font-family:var(--mono);padding:2px 8px;border-radius:4px;background:var(--purple-dim);border:0.5px solid var(--purple-b);color:var(--purple);cursor:pointer}
+.source-chip:hover{background:var(--purple-b)}
+
+.thinking{display:flex;align-items:center;gap:6px;padding:12px 16px;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--rl) var(--rl) var(--rl) 4px;font-size:12px;color:var(--muted);max-width:200px}
+.thinking-dots{display:flex;gap:3px}
+.thinking-dots span{width:5px;height:5px;border-radius:50%;background:var(--muted);animation:blink 1.2s infinite}
+.thinking-dots span:nth-child(2){animation-delay:.2s}
+.thinking-dots span:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,100%{opacity:.2}50%{opacity:1}}
+
+.chat-input-area{padding:16px 24px;border-top:0.5px solid var(--border);background:var(--bg)}
+.chat-suggestions{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.suggestion{font-size:11px;padding:5px 12px;border-radius:20px;border:0.5px solid var(--border2);background:var(--bg2);color:var(--muted);cursor:pointer;transition:all .15s}
+.suggestion:hover{border-color:var(--teal-b);color:var(--teal);background:var(--teal-dim)}
+.chat-row{display:flex;gap:8px;align-items:flex-end}
+.chat-textarea{flex:1;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--rl);padding:12px 14px;font-size:13px;color:var(--text);font-family:'Inter',sans-serif;outline:none;resize:none;transition:border-color .15s;min-height:44px;max-height:120px;line-height:1.5}
+.chat-textarea::placeholder{color:var(--hint)}
+.chat-textarea:focus{border-color:var(--teal)}
+.send-btn{width:40px;height:40px;border-radius:var(--r);background:var(--teal);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s}
+.send-btn:hover{background:#18b887}
+.send-btn svg{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">
+    <div class="logo-dot"></div>
+    Raginator
+  </div>
+  <div class="nav-right">
+    <span class="nav-badge">Mistral · ChromaDB</span>
+    <span class="nav-status idle" id="nav-status">
+      <span>idle</span>
+    </span>
+  </div>
+</nav>
+
+<!-- ══ STATE 1: DROP ══ -->
+<div id="state-drop">
+  <div class="drop-inner">
+    <div class="drop-eyebrow">Dr. Doofenshmirtz's greatest invention</div>
+    <h1 class="drop-h1">The RAG-inator</h1>
+    <p class="drop-sub">Drop any files or paste a URL. It shall RAG-ify everything.</p>
+
+    <div class="dropzone" id="dropzone">
+      <input type="file" multiple accept=".pdf,.txt,.md,.docx" id="file-input" onchange="handleFiles(this.files)">
+      <div class="dropzone-icon">⬆</div>
+      <h3>Drop files here</h3>
+      <p>PDF, TXT, MD, DOCX — or click to browse</p>
+    </div>
+
+    <div class="drop-divider">or</div>
+
+    <div class="url-row">
+      <input type="text" class="url-input" id="url-input" placeholder="https://docs.mistral.ai  or  github.com/owner/repo">
+      <button class="btn" onclick="addUrl()">Add</button>
+    </div>
+
+    <div class="file-list" id="file-list"></div>
+
+    <div class="config-row">
+      <div class="config-pill"><div class="dot" style="background:var(--teal)"></div>Embed: Mistral</div>
+      <div class="config-pill"><div class="dot" style="background:var(--purple)"></div>Store: ChromaDB</div>
+      <div class="config-pill"><div class="dot" style="background:var(--amber)"></div>Generate: Mistral</div>
+      <div class="config-pill"><div class="dot" style="background:var(--blue)"></div>Chunk: Semantic</div>
+    </div>
+
+    <button class="btn btn-primary start-btn" id="start-btn" onclick="startProcessing()">
+      Start Raginator ›
+    </button>
+  </div>
+</div>
+
+<!-- ══ STATE 2: PROCESSING ══ -->
+<div id="state-process">
+  <div class="process-top">
+    <div class="process-files" id="process-files"></div>
+    <div class="process-overall">
+      <span style="font-size:11px;font-family:var(--mono);color:var(--muted)">Pipeline</span>
+      <div class="overall-bar-wrap"><div class="overall-bar" id="overall-bar"></div></div>
+      <span class="overall-label" id="overall-label">0 / 8 stages</span>
+    </div>
+  </div>
+  <div class="stages-grid" id="stages-grid"></div>
+  <div class="log-panel" id="log-panel"></div>
+</div>
+
+<!-- ══ STATE 3: CHAT ══ -->
+<div id="state-chat">
+  <div class="corpus-bar" id="corpus-bar"></div>
+  <div class="chat-body" id="chat-body">
+    <div class="chat-empty" id="chat-empty">
+      <div class="chat-empty-icon">◎</div>
+      <p>Corpus ready. Ask anything.</p>
+    </div>
+  </div>
+  <div class="chat-input-area">
+    <div class="chat-suggestions" id="suggestions"></div>
+    <div class="chat-row">
+      <textarea class="chat-textarea" id="chat-input" placeholder="Ask a question about your documents…" rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+      <button class="send-btn" onclick="sendMessage()" aria-label="Send">
+        <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STAGES = [
+  {num:0,name:'Ingest',alias:'Suck-inator',stats:['247 docs','12.4 MB'],logs:['Loading PDF parser...','Reading 247 documents...','Extracted 247 RawDocument objects']},
+  {num:1,name:'Chunk',alias:'Chop-inator',stats:['1,842 chunks','avg 312 tokens'],logs:['Semantic chunker initialised','Splitting documents...','247 docs → 1,842 chunks']},
+  {num:2,name:'Embed',alias:'Vectorize-inator',stats:['1,842 vectors','dim=1024'],logs:['Mistral embed API connected','Embedding 1,842 chunks...','1,240 chunks/sec · done']},
+  {num:3,name:'Store',alias:'Remember-inator',stats:['ChromaDB','1,842 stored'],logs:['ChromaDB collection created','Inserting vectors...','1,842 vectors persisted']},
+  {num:4,name:'Retrieve',alias:'Find-inator',stats:['Hybrid BM25+dense','top-k=5'],logs:['BM25 index built','Dense index ready','Hybrid retriever initialised']},
+  {num:5,name:'Rerank',alias:'Better-Find-inator',stats:['cross-encoder','precision +18%'],logs:['Loading cross-encoder model...','Reranker ready','Precision@5 baseline: 0.84']},
+  {num:6,name:'Generate',alias:'Answer-inator',stats:['Mistral 7B Instruct','Self-RAG mode'],logs:['Mistral API connected','Self-RAG strategy loaded','Generator ready']},
+  {num:7,name:'Evaluate',alias:'Was-it-good-inator',stats:['faithfulness=0.91','p@5=0.84'],logs:['Running eval suite...','Faithfulness: 0.91','report saved → dashboard/report.html']},
+];
+
+const DEMO_ANSWERS = [
+  {q:'How does function calling work in Mistral?',
+   a:'Mistral function calling works by passing a list of tool definitions alongside your prompt. The model decides when to invoke a tool and returns a structured JSON object with the function name and arguments. You then execute the function yourself and pass the result back as a tool message. This enables multi-step agentic workflows where the model can query APIs, databases, or any external system.',
+   sources:['docs/function-calling.md · p.3','docs/api-reference.md · p.11','docs/guides/agents.md · p.2'],
+   ms:312,tokens:187,cost:'$0.00021'},
+  {q:'What models does Mistral offer?',
+   a:'Mistral offers several model tiers: Mistral 7B and Mixtral 8×7B as open-weight models you can self-host, Mistral Small and Mistral Medium as hosted API options for cost-sensitive workloads, and Mistral Large as the flagship model with top-tier reasoning. All models support function calling and the chat completion API format.',
+   sources:['docs/models.md · p.1','docs/pricing.md · p.2'],
+   ms:289,tokens:142,cost:'$0.00018'},
+  {q:'How do I deploy Mistral on-premises?',
+   a:'Mistral supports on-premises deployment through their enterprise tier. You can run Mistral models on your own infrastructure using vLLM, TGI (Text Generation Inference), or the official Mistral inference server. For GPU requirements, Mistral 7B runs on a single A100 80GB, while Mixtral 8×7B requires 2-4 A100s depending on quantization. The API is OpenAI-compatible so existing tooling works without modification.',
+   sources:['docs/self-hosting.md · p.1','docs/enterprise.md · p.4','docs/inference-guide.md · p.2'],
+   ms:401,tokens:201,cost:'$0.00026'},
+];
+
+let files = [];
+let urls = [];
+let chatHistory = [];
+let corpusName = '';
+let isThinking = false;
+let stagesDone = 0;
+
+function show(state) {
+  document.getElementById('state-drop').style.display = state==='drop' ? 'flex' : 'none';
+  document.getElementById('state-process').style.display = state==='process' ? 'flex' : 'none';
+  document.getElementById('state-chat').style.display = state==='chat' ? 'flex' : 'none';
+}
+
+function setStatus(s, label) {
+  const el = document.getElementById('nav-status');
+  el.className = 'nav-status ' + s;
+  el.innerHTML = s !== 'idle' ? `<span class="pulse"></span><span>${label}</span>` : `<span>${label}</span>`;
+}
+
+function handleFiles(fileList) {
+  for (const f of fileList) {
+    if (!files.find(x => x.name === f.name)) files.push(f);
+  }
+  renderFileList();
+}
+
+function addUrl() {
+  const input = document.getElementById('url-input');
+  const v = input.value.trim();
+  if (!v) return;
+  if (!urls.includes(v)) urls.push(v);
+  input.value = '';
+  renderFileList();
+}
+
+function removeFile(i) { files.splice(i,1); renderFileList(); }
+function removeUrl(i)  { urls.splice(i,1);  renderFileList(); }
+
+function fileIcon(name) {
+  if (name.endsWith('.pdf')) return '📄';
+  if (name.endsWith('.md'))  return '📝';
+  if (name.endsWith('.txt')) return '📃';
+  if (name.startsWith('http')) return '🔗';
+  return '📁';
+}
+
+function fmtSize(b) {
+  if (b > 1048576) return (b/1048576).toFixed(1)+'MB';
+  return Math.round(b/1024)+'KB';
+}
+
+function renderFileList() {
+  const el = document.getElementById('file-list');
+  const items = [
+    ...files.map((f,i) => `<div class="file-item">
+      <span class="file-icon">${fileIcon(f.name)}</span>
+      <span class="file-name">${f.name}</span>
+      <span class="file-size">${fmtSize(f.size)}</span>
+      <button class="file-remove" onclick="removeFile(${i})">×</button>
+    </div>`),
+    ...urls.map((u,i) => `<div class="file-item">
+      <span class="file-icon">🔗</span>
+      <span class="file-name">${u}</span>
+      <span class="file-size">url</span>
+      <button class="file-remove" onclick="removeUrl(${i})">×</button>
+    </div>`),
+  ];
+  el.innerHTML = items.join('');
+  document.getElementById('start-btn').style.opacity = (files.length || urls.length) ? '1' : '0.5';
+}
+
+const dropzone = document.getElementById('dropzone');
+dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('dragover'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+dropzone.addEventListener('drop', e => {
+  e.preventDefault(); dropzone.classList.remove('dragover');
+  handleFiles(e.dataTransfer.files);
+});
+
+function startProcessing() {
+  if (!files.length && !urls.length) {
+    files = [{name:'mistral-docs.pdf',size:2400000},{name:'api-reference.md',size:180000}];
+    urls = [];
+  }
+  corpusName = files.length ? files[0].name.replace(/\.[^.]+$/,'') : new URL(urls[0]).hostname;
+  show('process');
+  setStatus('running','processing');
+  renderProcessTop();
+  renderStagesGrid();
+  stagesDone = 0;
+  runStages();
+}
+
+function renderProcessTop() {
+  const el = document.getElementById('process-files');
+  el.innerHTML = [...files.map(f=>`<div class="pf-chip">${fileIcon(f.name)} ${f.name}</div>`),
+                  ...urls.map(u=>`<div class="pf-chip">🔗 ${u}</div>`)].join('');
+}
+
+function renderStagesGrid() {
+  document.getElementById('stages-grid').innerHTML = STAGES.map(s =>
+    `<div class="stage-tile waiting" id="tile-${s.num}">
+      <div class="st-num">stage ${s.num}</div>
+      <div class="st-name">${s.name}</div>
+      <div class="st-alias">${s.alias}</div>
+      <div class="st-stat" id="stat-${s.num}">waiting…</div>
+      <div class="st-bar-wrap"><div class="st-bar" id="bar-${s.num}"></div></div>
+      <div class="st-check">✓ done</div>
+    </div>`).join('');
+}
+
+function log(text, cls='log-line') {
+  const panel = document.getElementById('log-panel');
+  const line = document.createElement('div');
+  line.className = cls;
+  line.textContent = '› ' + text;
+  panel.appendChild(line);
+  panel.scrollTop = panel.scrollHeight;
+}
+
+async function runStages() {
+  for (let i = 0; i < STAGES.length; i++) {
+    const s = STAGES[i];
+    const tile = document.getElementById('tile-'+s.num);
+    tile.className = 'stage-tile active';
+    document.getElementById('stat-'+s.num).textContent = 'running…';
+
+    for (let l of s.logs) { await sleep(280); log(l); }
+
+    const bar = document.getElementById('bar-'+s.num);
+    bar.style.width = '100%';
+    await sleep(200);
+
+    tile.className = 'stage-tile done';
+    document.getElementById('stat-'+s.num).textContent = s.stats[0];
+
+    stagesDone++;
+    document.getElementById('overall-bar').style.width = (stagesDone/STAGES.length*100)+'%';
+    document.getElementById('overall-label').textContent = stagesDone+' / '+STAGES.length+' stages';
+    await sleep(160);
+  }
+  await sleep(400);
+  log('Pipeline complete. Perry the Platypus has not been detected.', 'log-line ok');
+  await sleep(600);
+  showChat();
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function showChat() {
+  show('chat');
+  setStatus('ready', 'ready');
+  const bar = document.getElementById('corpus-bar');
+  bar.innerHTML = `
+    <div class="corpus-chip">◎ ${corpusName}</div>
+    <div class="corpus-chip">1,842 chunks</div>
+    <div class="corpus-chip">247 docs</div>
+    <div class="corpus-stats">
+      <div class="cs-item">embed <span>Mistral</span></div>
+      <div class="cs-item">store <span>ChromaDB</span></div>
+      <div class="cs-item">rerank <span>cross-encoder</span></div>
+    </div>
+    <button class="reset-btn" onclick="resetApp()">Reset ×</button>`;
+
+  const sugg = document.getElementById('suggestions');
+  sugg.innerHTML = DEMO_ANSWERS.map(a =>
+    `<div class="suggestion" onclick="fireQuery('${a.q.replace(/'/g,"\\'")}')">
+      ${a.q}
+    </div>`).join('');
+}
+
+function resetApp() {
+  files=[]; urls=[]; chatHistory=[]; stagesDone=0;
+  document.getElementById('file-list').innerHTML='';
+  document.getElementById('chat-body').innerHTML='<div class="chat-empty" id="chat-empty"><div class="chat-empty-icon">◎</div><p>Corpus ready. Ask anything.</p></div>';
+  document.getElementById('log-panel').innerHTML='';
+  setStatus('idle','idle');
+  show('drop');
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120)+'px';
+}
+
+function handleKey(e) {
+  if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+function fireQuery(q) {
+  document.getElementById('chat-input').value = q;
+  sendMessage();
+}
+
+async function sendMessage() {
+  if (isThinking) return;
+  const input = document.getElementById('chat-input');
+  const q = input.value.trim();
+  if (!q) return;
+  input.value = ''; autoResize(input);
+
+  document.getElementById('chat-empty') && document.getElementById('chat-empty').remove();
+
+  appendMsg('user', q);
+
+  const thinking = appendThinking();
+  isThinking = true;
+
+  await sleep(800 + Math.random()*600);
+
+  thinking.remove();
+  isThinking = false;
+
+  const match = DEMO_ANSWERS.find(a => a.q.toLowerCase().includes(q.toLowerCase().split(' ').slice(0,3).join(' '))) || DEMO_ANSWERS[Math.floor(Math.random()*DEMO_ANSWERS.length)];
+  appendMsg('bot', match.a, match.sources, match.ms, match.tokens, match.cost);
+
+  document.getElementById('chat-body').scrollTop = 9999;
+}
+
+function appendMsg(role, text, sources, ms, tokens, cost) {
+  const body = document.getElementById('chat-body');
+  const div = document.createElement('div');
+  div.className = 'msg msg-'+role;
+  if (role==='user') {
+    div.innerHTML = `<div class="msg-bubble">${escHtml(text)}</div>`;
+  } else {
+    const srcHtml = sources ? `<div class="msg-sources">${sources.map(s=>`<span class="source-chip" title="${s}">${s.split('·')[0].trim()}</span>`).join('')}</div>` : '';
+    const metaHtml = ms ? `<div class="msg-meta"><span>${ms}ms</span><span>${tokens} tokens</span><span>${cost}</span></div>` : '';
+    div.innerHTML = `<div class="msg-bubble">${escHtml(text)}</div>${srcHtml}${metaHtml}`;
+  }
+  body.appendChild(div);
+}
+
+function appendThinking() {
+  const body = document.getElementById('chat-body');
+  const div = document.createElement('div');
+  div.className = 'msg msg-bot';
+  div.innerHTML = `<div class="thinking"><div class="thinking-dots"><span></span><span></span><span></span></div><span>Retrieving…</span></div>`;
+  body.appendChild(div);
+  body.scrollTop = 9999;
+  return div;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+show('drop');
+</script>
+</body>
+</html>

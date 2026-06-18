@@ -29,9 +29,10 @@
   optimize and benchmark the model that powers your RAG pipeline
 - Raginator — build the pipeline around it
 
-## RAG PIPELINE
+## RAGINATOR PIPELINE
 
-![](./img/pipeline.jpeg)
+![](./img/stages.png)
+
 
 ### Stages
 
