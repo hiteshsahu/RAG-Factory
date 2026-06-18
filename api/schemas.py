@@ -31,9 +31,11 @@ class CamelModel(BaseModel):
 
 
 class PipelineSettings(CamelModel):
-    embed_provider: Provider = "Mistral"
+    # Ollama -- mirrors frontend/src/data/index.ts's DEFAULT_SETTINGS exactly,
+    # since it needs no API key to work out of the box.
+    embed_provider: Provider = "Ollama"
     vector_store: VectorStoreName = "ChromaDB"
-    llm_provider: Provider = "Mistral"
+    llm_provider: Provider = "Ollama"
     chunk_strategy: ChunkStrategy = "Semantic"
 
 
