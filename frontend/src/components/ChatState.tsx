@@ -8,6 +8,7 @@ import SendIcon from '@mui/icons-material/Send'
 import ManageSearchIcon from '@mui/icons-material/ManageSearch'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import CheckIcon from '@mui/icons-material/Check'
+import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import CloseIcon from '@mui/icons-material/Close'
 import HistoryIcon from '@mui/icons-material/History'
 import { DEMO_QA, formatBytes, type CorpusStats, type Message, type SourceChunk } from '../data'
@@ -110,18 +111,23 @@ export default function ChatState({
         <Chip label={`${stats.chunks.toLocaleString()} chunks`} size="small" variant="outlined" />
         <Chip label={`${stats.docs} doc${stats.docs === 1 ? '' : 's'}`} size="small" variant="outlined" />
         <Box sx={{ flex: 1 }} />
+        <Chip
+          icon={<CheckCircleIcon sx={{ fontSize: 14 }} />}
+          label="Corpus ready"
+          size="small" color="primary" variant="outlined"
+        />
         <Button size="small" color="error" variant="outlined" onClick={onReset} sx={{ minWidth: 0, px: 1.5 }}>
           Reset
         </Button>
       </Box>
 
       {/* Messages */}
-      <Box ref={chatRef} sx={{ flex: 1, overflowY: 'auto', p: 3, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+      <Box ref={chatRef} sx={{ flex: 1, minHeight: 0, overflowY: 'auto', p: 3, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
 
-        {/* Corpus stats card -- confirms the pipeline actually produced something */}
+        {/* Corpus stats card -- confirms the pipeline actually produced something.
+            "Corpus ready" now lives in the bar above, next to Reset. */}
         <Card sx={{ p: 2.5 }}>
-          <Typography variant="overline" color="primary">✓ Corpus ready</Typography>
-          <Grid container spacing={2} mt={1}>
+          <Grid container spacing={2}>
             {STAT_ITEMS(stats).map(({ label, value }) => (
               <Grid item xs={6} sm={4} md={2.4} key={label}>
                 <Typography

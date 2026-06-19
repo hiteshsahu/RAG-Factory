@@ -51,7 +51,10 @@ export default function App() {
   const [settings, setSettings] = useLocalStorage<PipelineSettings>('raginator:settings', DEFAULT_SETTINGS)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
-  const [corpusHistory, setCorpusHistory] = useLocalStorage<CorpusHistory[]>('raginator:corpus-history', [])
+  // v2: corpus history entries now carry a full stats snapshot instead of
+  // just a doc count -- bumped key so old-schema entries (which would crash
+  // reading corpus.stats.docs) are abandoned rather than loaded and broken.
+  const [corpusHistory, setCorpusHistory] = useLocalStorage<CorpusHistory[]>('raginator:corpus-history-v2', [])
   const [historyOpen, setHistoryOpen] = useState(false)
   const [activeCorpusId, setActiveCorpusId] = useState<string | null>(null)
   const [activeQueryId, setActiveQueryId] = useState<number | null>(null)
@@ -143,7 +146,7 @@ export default function App() {
                 corpusId,
                 corpusName: name,
                 sourceType: sourceTypeOf(files, urls),
-                docCount: event.corpusStats?.docs ?? files.length,
+                stats: event.corpusStats ?? FALLBACK_CORPUS_STATS,
                 createdAt: Date.now(),
                 queries: [],
               },
@@ -224,17 +227,31 @@ export default function App() {
 
     setMessages(allMessages)
     setCorpusName(corpus.corpusName)
-    // Historical corpora only carry a doc count, not the full stats snapshot
-    // -- fall back to the zeroed display rather than show stale numbers
-    // from whatever corpus happens to actually be loaded server-side.
-    setCorpusStats(null)
+    // Real snapshot from when this corpus was indexed -- not necessarily
+    // what's actually loaded server-side right now (the bridge only tracks
+    // one corpus at a time), but accurate for what this conversation was
+    // originally about, which is what the stats card should reflect.
+    setCorpusStats(corpus.stats)
     setActiveCorpusId(corpusId)
     setActiveQueryId(queryId)
-    setHistoryOpen(false)
     // History is global (visible from drop/process too) but a restored
-    // conversation only makes sense in the chat view -- jump there.
+    // conversation only makes sense in the chat view -- jump there. The
+    // drawer itself stays open -- selecting an item shouldn't close it.
     setAppState('chat')
     setScrollTarget({ index: scrollIndex, nonce: ++scrollNonceRef.current })
+  }, [corpusHistory])
+
+  // Clicking a corpus with no queries yet (nothing to restore) still needs
+  // to land you in its chat -- just with an empty conversation.
+  const selectCorpus = useCallback((corpusId: string) => {
+    const corpus = corpusHistory.find(c => c.corpusId === corpusId)
+    if (!corpus) return
+    setMessages(corpus.queries.flatMap(q => q.messages))
+    setCorpusName(corpus.corpusName)
+    setCorpusStats(corpus.stats)
+    setActiveCorpusId(corpusId)
+    setActiveQueryId(corpus.queries[corpus.queries.length - 1]?.id ?? null)
+    setAppState('chat')
   }, [corpusHistory])
 
   const statusLabel = appState === 'process'
@@ -245,9 +262,9 @@ export default function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+      <Box sx={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', bgcolor: 'background.default' }}>
 
-        <AppBar position="sticky" elevation={0} color="transparent">
+        <AppBar position="static" elevation={0} color="transparent">
           <Toolbar  sx={{ gap: 1 }}>
             <Box
                 component="img"
@@ -292,19 +309,24 @@ export default function App() {
           </Toolbar>
         </AppBar>
 
-        <Box sx={{ display: 'flex', minHeight: 'calc(100vh - 48px)' }}>
+        {/* flex:1+minHeight:0 (not a hardcoded "100vh - AppBar height") so this
+            always takes exactly whatever's left below the AppBar, regardless
+            of its actual rendered height -- the page itself never scrolls;
+            only the panes below that declare their own overflow do. */}
+        <Box sx={{ display: 'flex', flex: 1, minHeight: 0 }}>
           <HistoryDrawer
             open={historyOpen}
             corpora={corpusHistory}
             activeCorpusId={activeCorpusId}
             activeQueryId={activeQueryId}
             onSelect={restoreQuery}
+            onSelectCorpus={selectCorpus}
             onNew={handleReset}
             onClose={() => setHistoryOpen(false)}
             onOpen={() => setHistoryOpen(true)}
           />
 
-          <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Box sx={{ flex: 1, minWidth: 0, overflowY: 'auto' }}>
             {appState === 'drop' && (
               <DropState onStart={runPipeline} settings={settings} onOpenSettings={() => setSettingsOpen(true)} />
             )}

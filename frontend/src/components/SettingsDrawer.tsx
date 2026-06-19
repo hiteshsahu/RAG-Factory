@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react'
 import {
-  Alert, Box, Drawer, IconButton, Stack, Tooltip,
+  Alert, Box, Divider, Drawer, IconButton, Stack, Tooltip,
   ToggleButton, ToggleButtonGroup, Typography,
 } from '@mui/material'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
@@ -100,12 +100,12 @@ export default function SettingsDrawer({ open, settings, onChange, onClose, onOp
         </Stack>
 
         {open ? (
-          <Box sx={{ px: 2.5, pb: 3, overflowY: 'auto' }}>
+          <Box sx={{ px: 2.5, pb: 3, flex: 1, minHeight: 0, overflowY: 'auto' }}>
             <Typography variant="body2" color="text.secondary" mb={3}>
               Takes effect on the next run. Saved automatically.
             </Typography>
 
-            <Stack spacing={3}>
+            <Stack spacing={3} divider={<Divider flexItem />}>
               {SECTIONS.map(section => (
                 <Box key={section.key}>
                   <Stack direction="row" alignItems="center" spacing={1} mb={0.25}>

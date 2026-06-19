@@ -13,7 +13,7 @@ import LinkIcon from '@mui/icons-material/Link'
 import ManageSearchIcon from '@mui/icons-material/ManageSearch'
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf'
 import type { Theme } from '@mui/material'
-import type { Message } from '../data'
+import type { CorpusStats, Message } from '../data'
 
 export type SourceType = 'pdf' | 'doc' | 'url'
 
@@ -28,7 +28,9 @@ export interface CorpusHistory {
   corpusId: string
   corpusName: string
   sourceType: SourceType
-  docCount: number
+  // The full snapshot, not just a doc count -- restoring a query needs real
+  // numbers for the stats card, not a zeroed fallback.
+  stats: CorpusStats
   createdAt: number
   queries: HistoryQuery[]
 }
@@ -39,6 +41,7 @@ interface Props {
   activeCorpusId: string | null
   activeQueryId: number | null
   onSelect: (corpusId: string, queryId: number) => void
+  onSelectCorpus: (corpusId: string) => void
   onNew: () => void
   onClose: () => void
   onOpen: () => void
@@ -69,7 +72,7 @@ const FULL_WIDTH = 300
 // grouped by corpus -- you're not remembering queries, you're remembering
 // conversations with a document.
 export default function HistoryDrawer({
-  open, corpora, activeCorpusId, activeQueryId, onSelect, onNew, onClose, onOpen,
+  open, corpora, activeCorpusId, activeQueryId, onSelect, onSelectCorpus, onNew, onClose, onOpen,
 }: Props) {
   // Starts with everything collapsed except whichever corpus is currently
   // active (the one you're actually chatting in) -- seeded once from
@@ -137,7 +140,7 @@ export default function HistoryDrawer({
         {open && <Divider />}
 
         {open ? (
-          <Box sx={{ px: 1.5, pb: 3, overflowY: 'auto' }}>
+          <Box sx={{ px: 1.5, pb: 3, flex: 1, minHeight: 0, overflowY: 'auto' }}>
             {corpora.length === 0 ? (
               <Stack alignItems="center" sx={{ opacity: 0.4, py: 6 }} spacing={1}>
                 <ManageSearchIcon sx={{ fontSize: 32 }} />
@@ -150,32 +153,48 @@ export default function HistoryDrawer({
                 {corpora.map(corpus => {
                   const { icon: SourceIcon, color } = SOURCE_ICON[corpus.sourceType]
                   const collapsed = collapsedIds.has(corpus.corpusId)
+                  const hasQueries = corpus.queries.length > 0
                   return (
                     <Box key={corpus.corpusId}>
                       <Stack
                         direction="row" alignItems="flex-start" spacing={1}
-                        onClick={() => toggleCollapsed(corpus.corpusId)}
-                        sx={{ px: 1, mb: 0.5, py: 0.5, borderRadius: 1, cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' } }}
+                        sx={{ px: 1, mb: 0.5, py: 0.5, borderRadius: 1, '&:hover': { bgcolor: 'action.hover' } }}
                       >
-                        <SourceIcon sx={{ fontSize: 18, color, mt: '2px', flexShrink: 0 }} />
-                        <Box sx={{ minWidth: 0, flex: 1 }}>
-                          <Typography
-                            variant="body2" fontWeight={600}
-                            sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                        {/* Separate click targets: this area always opens the
+                            corpus's chat; the chevron (only present once there's
+                            something to hide) only ever toggles the list below. */}
+                        <Stack
+                          direction="row" alignItems="flex-start" spacing={1}
+                          onClick={() => onSelectCorpus(corpus.corpusId)}
+                          sx={{ flex: 1, minWidth: 0, cursor: 'pointer' }}
+                        >
+                          <SourceIcon sx={{ fontSize: 18, color, mt: '2px', flexShrink: 0 }} />
+                          <Box sx={{ minWidth: 0 }}>
+                            <Typography
+                              variant="body2" fontWeight={600}
+                              sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                            >
+                              {corpus.corpusName}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.68rem', display: 'block' }}>
+                              {corpus.stats.docs} doc{corpus.stats.docs === 1 ? '' : 's'} · {relativeTime(corpus.createdAt)}
+                            </Typography>
+                          </Box>
+                        </Stack>
+                        {hasQueries && (
+                          <IconButton
+                            onClick={() => toggleCollapsed(corpus.corpusId)}
+                            sx={{ p: 1, m: '-8px -8px -8px 0' }}
                           >
-                            {corpus.corpusName}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.68rem', display: 'block' }}>
-                            {corpus.docCount} doc{corpus.docCount === 1 ? '' : 's'} · {relativeTime(corpus.createdAt)}
-                          </Typography>
-                        </Box>
-                        <ExpandMoreIcon
-                          sx={{
-                            fontSize: 18, mt: '2px', flexShrink: 0, color: 'text.secondary',
-                            transform: collapsed ? 'rotate(-90deg)' : 'none',
-                            transition: theme => theme.transitions.create('transform', { duration: theme.transitions.duration.shortest }),
-                          }}
-                        />
+                            <ExpandMoreIcon
+                              sx={{
+                                fontSize: 20, color: 'text.secondary',
+                                transform: collapsed ? 'rotate(-90deg)' : 'none',
+                                transition: theme => theme.transitions.create('transform', { duration: theme.transitions.duration.shortest }),
+                              }}
+                            />
+                          </IconButton>
+                        )}
                       </Stack>
 
                       <Collapse in={!collapsed} timeout="auto">

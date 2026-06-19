@@ -35,6 +35,11 @@ const getTheme = (mode: PaletteMode) => {
       MuiCssBaseline: {
         styleOverrides: {
           '*': { boxSizing: 'border-box' },
+          // Belt-and-suspenders: App.tsx's shell is already locked to exactly
+          // 100vh with its own internal scroll panes, but pin html/body too
+          // so the page itself can never grow a scrollbar even if something
+          // downstream briefly overflows.
+          'html, body, #root': { height: '100%', overflow: 'hidden' },
           '::-webkit-scrollbar': { width: 4, height: 4 },
           '::-webkit-scrollbar-track': { background: 'transparent' },
           '::-webkit-scrollbar-thumb': { background: scrollbar, borderRadius: 2 },
