@@ -118,7 +118,6 @@ export default function SettingsDrawer({ open, settings, onChange, onClose, onOp
                   <ToggleButtonGroup
                     exclusive
                     size="small"
-                    fullWidth
                     value={settings[section.key]}
                     onChange={(_, value) => setValue(section.key, value)}
                     sx={{
@@ -139,7 +138,20 @@ export default function SettingsDrawer({ open, settings, onChange, onClose, onOp
                     }}
                   >
                     {section.options.map(opt => (
-                      <ToggleButton key={opt} value={opt} sx={{ textTransform: 'none', flex: '1 0 auto' }}>
+                      <ToggleButton
+                        key={opt} value={opt}
+                        sx={{
+                          textTransform: 'none', fontSize: '0.8rem', px: 2, py: 0.75,
+                          // Default Mui-selected is a faint neutral tint --
+                          // too low-contrast to read as "this one's active"
+                          // at a glance. Solid fill instead.
+                          '&.Mui-selected': {
+                            bgcolor: 'primary.main',
+                            color: '#fff',
+                            '&:hover': { bgcolor: 'primary.dark' },
+                          },
+                        }}
+                      >
                         {opt}
                       </ToggleButton>
                     ))}

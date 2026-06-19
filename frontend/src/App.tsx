@@ -14,17 +14,18 @@ import DropState from './components/DropState'
 import ProcessState from './components/ProcessState'
 import ChatState from './components/ChatState'
 import SettingsDrawer from './components/SettingsDrawer'
-import HistoryDrawer, { type HistoryEntry } from './components/HistoryDrawer'
+import HistoryDrawer, { type CorpusHistory, type SourceType } from './components/HistoryDrawer'
 
 type AppState = 'drop' | 'process' | 'chat'
 
 interface LogLine { text: string; kind: 'default' | 'success' | 'error' }
 
-interface FullHistoryEntry extends HistoryEntry {
-  messages: Message[]
-}
-
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
+
+const sourceTypeOf = (files: File[], urls: string[]): SourceType => {
+  if (files.length > 0) return files[0].name.toLowerCase().endsWith('.pdf') ? 'pdf' : 'doc'
+  return urls.length > 0 ? 'url' : 'doc'
+}
 
 // -1 is a sentinel for "failed before any stage started" (preflight, or a
 // connection error) -- distinct from `null` (no failure) and from a real
@@ -50,16 +51,22 @@ export default function App() {
   const [settings, setSettings] = useLocalStorage<PipelineSettings>('raginator:settings', DEFAULT_SETTINGS)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
-  const [history, setHistory] = useLocalStorage<FullHistoryEntry[]>('raginator:chat-history', [])
+  const [corpusHistory, setCorpusHistory] = useLocalStorage<CorpusHistory[]>('raginator:corpus-history', [])
   const [historyOpen, setHistoryOpen] = useState(false)
-  const [activeHistoryId, setActiveHistoryId] = useState<number | null>(null)
+  const [activeCorpusId, setActiveCorpusId] = useState<string | null>(null)
+  const [activeQueryId, setActiveQueryId] = useState<number | null>(null)
+  const [scrollTarget, setScrollTarget] = useState<{ index: number; nonce: number } | null>(null)
+  const scrollNonceRef = useRef(0)
   const [mode, setMode] = useState<PaletteMode>('dark')
   const theme = useMemo(() => getTheme(mode), [mode])
   const cancelRef = useRef(false)
   const lastRunRef = useRef<{ files: File[]; urls: string[] }>({ files: [], urls: [] })
   // Resume id numbering above whatever was already persisted, so restored
   // entries from a previous session can't collide with new ones.
-  const historyIdRef = useRef(history.reduce((max, h) => Math.max(max, h.id), 0))
+  const queryIdRef = useRef(
+    corpusHistory.reduce((max, c) => c.queries.reduce((m, q) => Math.max(m, q.id), max), 0),
+  )
+  const corpusIdRef = useRef(corpusHistory.length)
 
   const addLog = useCallback((text: string, kind: LogLine['kind'] = 'default') => {
     setLogs(l => [...l, { text, kind }])
@@ -86,7 +93,8 @@ export default function App() {
       setFailedStage(PREFLIGHT_STAGE)
       return
     }
-    setCorpusName(files[0].name.replace(/\.[^.]+$/, ''))
+    const name = files[0].name.replace(/\.[^.]+$/, '')
+    setCorpusName(name)
 
     try {
       for await (const event of streamPipelineStart(files, settings)) {
@@ -119,20 +127,40 @@ export default function App() {
             setFailedStage(event.stage ?? PREFLIGHT_STAGE)
             return
 
-          case 'complete':
+          case 'complete': {
             addLog('Pipeline complete.', 'success')
             if (event.corpusStats) setCorpusStats(event.corpusStats)
             if (event.suggestedQuestions) setSuggestedQuestions(event.suggestedQuestions)
+
+            // A successful upload starts a new corpus group at the top of
+            // history -- every question asked from here on (until the next
+            // upload or reset) nests under it.
+            const corpusId = `corpus-${++corpusIdRef.current}`
+            setActiveCorpusId(corpusId)
+            setActiveQueryId(null)
+            setCorpusHistory(h => [
+              {
+                corpusId,
+                corpusName: name,
+                sourceType: sourceTypeOf(files, urls),
+                docCount: event.corpusStats?.docs ?? files.length,
+                createdAt: Date.now(),
+                queries: [],
+              },
+              ...h,
+            ])
+
             await sleep(500)
             setAppState('chat')
             return
+          }
         }
       }
     } catch (err) {
       addLog(err instanceof Error ? err.message : String(err), 'error')
       setFailedStage(PREFLIGHT_STAGE)
     }
-  }, [addLog, settings])
+  }, [addLog, settings, setCorpusHistory])
 
   const handleRetry = useCallback(() => {
     const { files, urls } = lastRunRef.current
@@ -150,7 +178,8 @@ export default function App() {
     setCorpusStats(null)
     setSuggestedQuestions([])
     setMessages([])
-    setActiveHistoryId(null)
+    setActiveCorpusId(null)
+    setActiveQueryId(null)
   }
 
   // Lives at the App level (not ChatState) so the history drawer's persistent
@@ -158,7 +187,6 @@ export default function App() {
   const sendMessage = useCallback(async (text: string) => {
     const userMsg: Message = { role: 'user', text }
     setMessages(m => [...m, userMsg])
-    setActiveHistoryId(null)
 
     let botMsg: Message
     try {
@@ -172,21 +200,42 @@ export default function App() {
     }
 
     setMessages(m => [...m, botMsg])
-    const id = ++historyIdRef.current
-    setHistory(h => [{ id, query: text, time: Date.now(), messages: [userMsg, botMsg] }, ...h])
-    setActiveHistoryId(id)
-  }, [setHistory])
 
-  const restoreHistoryEntry = useCallback((entry: HistoryEntry) => {
-    const full = history.find(h => h.id === entry.id)
-    if (!full) return
-    setMessages(full.messages)
-    setActiveHistoryId(full.id)
+    const queryId = ++queryIdRef.current
+    setCorpusHistory(h => h.map(corpus =>
+      corpus.corpusId === activeCorpusId
+        ? { ...corpus, queries: [...corpus.queries, { id: queryId, question: text, messages: [userMsg, botMsg], timestamp: Date.now() }] }
+        : corpus,
+    ))
+    setActiveQueryId(queryId)
+  }, [activeCorpusId, setCorpusHistory])
+
+  const restoreQuery = useCallback((corpusId: string, queryId: number) => {
+    const corpus = corpusHistory.find(c => c.corpusId === corpusId)
+    const queryIndex = corpus?.queries.findIndex(q => q.id === queryId) ?? -1
+    if (!corpus || queryIndex === -1) return
+
+    // Show the whole conversation for this corpus, not just the one exchange
+    // that was clicked -- then scroll to where that exchange starts within
+    // it, so the rest of the back-and-forth is still right there to scroll
+    // through instead of being thrown away.
+    const allMessages = corpus.queries.flatMap(q => q.messages)
+    const scrollIndex = corpus.queries.slice(0, queryIndex).reduce((sum, q) => sum + q.messages.length, 0)
+
+    setMessages(allMessages)
+    setCorpusName(corpus.corpusName)
+    // Historical corpora only carry a doc count, not the full stats snapshot
+    // -- fall back to the zeroed display rather than show stale numbers
+    // from whatever corpus happens to actually be loaded server-side.
+    setCorpusStats(null)
+    setActiveCorpusId(corpusId)
+    setActiveQueryId(queryId)
     setHistoryOpen(false)
     // History is global (visible from drop/process too) but a restored
     // conversation only makes sense in the chat view -- jump there.
     setAppState('chat')
-  }, [history])
+    setScrollTarget({ index: scrollIndex, nonce: ++scrollNonceRef.current })
+  }, [corpusHistory])
 
   const statusLabel = appState === 'process'
     ? (failedStage !== null ? 'failed' : 'processing')
@@ -246,9 +295,11 @@ export default function App() {
         <Box sx={{ display: 'flex', minHeight: 'calc(100vh - 48px)' }}>
           <HistoryDrawer
             open={historyOpen}
-            entries={history}
-            activeId={activeHistoryId}
-            onSelect={restoreHistoryEntry}
+            corpora={corpusHistory}
+            activeCorpusId={activeCorpusId}
+            activeQueryId={activeQueryId}
+            onSelect={restoreQuery}
+            onNew={handleReset}
             onClose={() => setHistoryOpen(false)}
             onOpen={() => setHistoryOpen(true)}
           />
@@ -276,6 +327,7 @@ export default function App() {
                 stats={corpusStats ?? FALLBACK_CORPUS_STATS}
                 suggestedQuestions={suggestedQuestions}
                 messages={messages}
+                scrollTarget={scrollTarget}
                 historyOpen={historyOpen}
                 onToggleHistory={() => setHistoryOpen(o => !o)}
                 onSend={sendMessage}

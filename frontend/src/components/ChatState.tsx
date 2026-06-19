@@ -17,6 +17,7 @@ interface Props {
   stats: CorpusStats
   suggestedQuestions: string[]
   messages: Message[]
+  scrollTarget: { index: number; nonce: number } | null
   historyOpen: boolean
   onToggleHistory: () => void
   onSend: (text: string) => Promise<void>
@@ -34,15 +35,17 @@ const STAT_ITEMS = (stats: CorpusStats) => [
 const IS_MAC = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
 
 export default function ChatState({
-  corpusName, stats, suggestedQuestions, messages, historyOpen, onToggleHistory, onSend, onReset,
+  corpusName, stats, suggestedQuestions, messages, scrollTarget, historyOpen, onToggleHistory, onSend, onReset,
 }: Props) {
   const [query, setQuery]       = useState('')
   const [thinking, setThinking] = useState(false)
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null)
   const [previewSource, setPreviewSource] = useState<SourceChunk | null>(null)
   const [inputFocused, setInputFocused] = useState(false)
+  const [highlightRange, setHighlightRange] = useState<[number, number] | null>(null)
   const chatRef = useRef<HTMLDivElement>(null)
   const queryInputRef = useRef<HTMLInputElement>(null)
+  const messageRefs = useRef<(HTMLDivElement | null)[]>([])
 
   const copyMessage = (text: string, index: number) => {
     navigator.clipboard.writeText(text)
@@ -53,6 +56,19 @@ export default function ChatState({
   useEffect(() => {
     if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight
   }, [messages, thinking])
+
+  // Restoring a query from history shows the whole conversation it belongs
+  // to (see App.tsx) -- this scrolls to where that specific exchange starts
+  // within it and briefly highlights it, overriding the scroll-to-bottom
+  // effect above (declared first, so this one wins). Keyed on `nonce`, not
+  // just `index`, so clicking the same history entry twice still re-scrolls.
+  useEffect(() => {
+    if (!scrollTarget) return
+    messageRefs.current[scrollTarget.index]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    setHighlightRange([scrollTarget.index, scrollTarget.index + 1])
+    const timer = setTimeout(() => setHighlightRange(null), 1800)
+    return () => clearTimeout(timer)
+  }, [scrollTarget?.nonce])
 
   // Cmd/Ctrl+K focuses the query box from anywhere on the page.
   useEffect(() => {
@@ -132,6 +148,7 @@ export default function ChatState({
         {messages.map((m, i) => (
           <Box
             key={i}
+            ref={(el: HTMLDivElement | null) => { messageRefs.current[i] = el }}
             sx={{ display: 'flex', flexDirection: 'column', alignItems: m.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '78%', alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start' }}
           >
             <Paper
@@ -140,6 +157,9 @@ export default function ChatState({
                 bgcolor: m.role === 'user' ? 'primary.main' : 'background.paper',
                 borderRadius: m.role === 'user' ? '12px 12px 3px 12px' : '12px 12px 12px 3px',
                 border: m.role === 'user' ? 'none' : '0.5px solid rgba(255,255,255,0.1)',
+                boxShadow: highlightRange && i >= highlightRange[0] && i <= highlightRange[1]
+                  ? '0 0 0 2px rgba(29,158,117,0.7)' : 'none',
+                transition: 'box-shadow 0.4s ease',
                 position: 'relative',
                 '&:hover .copy-btn': { opacity: 1 },
               }}
