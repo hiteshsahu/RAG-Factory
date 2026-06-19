@@ -31,6 +31,10 @@ export interface CorpusHistory {
   // The full snapshot, not just a doc count -- restoring a query needs real
   // numbers for the stats card, not a zeroed fallback.
   stats: CorpusStats
+  // Generated once when this corpus was indexed -- switching to it via
+  // History must show ITS suggestions, not whatever's left over in global
+  // state from the last corpus that was actually indexed.
+  suggestedQuestions: string[]
   createdAt: number
   queries: HistoryQuery[]
 }

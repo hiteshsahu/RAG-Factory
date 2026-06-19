@@ -7,10 +7,12 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import ContentCutIcon from '@mui/icons-material/ContentCut'
 import BubbleChartIcon from '@mui/icons-material/BubbleChart'
+import FormatShapesIcon from '@mui/icons-material/FormatShapes';
 import StorageIcon from '@mui/icons-material/Storage'
-import SmartToyIcon from '@mui/icons-material/SmartToy'
+import PsychologyIcon from '@mui/icons-material/Psychology';
 import type { Theme } from '@mui/material'
 import type { PipelineSettings } from '../data'
+import { PROVIDER_ICON } from './icons/ProviderIcons'
 
 const TOAST_LIFETIME_MS = 2500
 const MINI_WIDTH = 64
@@ -34,9 +36,9 @@ interface Section {
 
 const SECTIONS: Section[] = [
   { key: 'chunkStrategy', label: 'Chunking strategy',  hint: 'Stage 1 — splits documents into retrievable chunks', icon: ContentCutIcon, options: ['Fixed', 'Recursive', 'Semantic', 'Code'] },
-  { key: 'embedProvider', label: 'Embedding provider', hint: 'Stage 2 — converts chunks into vectors', icon: BubbleChartIcon, options: ['Mistral', 'OpenAI', 'Ollama'] },
+  { key: 'embedProvider', label: 'Embedding provider', hint: 'Stage 2 — converts chunks into vectors', icon: FormatShapesIcon, options: ['Mistral', 'OpenAI', 'Ollama'] },
   { key: 'vectorStore',   label: 'Vector store',       hint: 'Stage 3 — persists vectors for similarity search', icon: StorageIcon, options: ['ChromaDB', 'pgvector'] },
-  { key: 'llmProvider',   label: 'LLM for generation',  hint: 'Stage 6 — generates the final answer', icon: SmartToyIcon, options: ['Mistral', 'OpenAI', 'Ollama'] },
+  { key: 'llmProvider',   label: 'LLM for generation',  hint: 'Stage 6 — generates the final answer', icon: PsychologyIcon, options: ['Mistral', 'OpenAI', 'Ollama'] },
 ]
 
 // Mini variant persistent drawer: collapsed state stays mounted and visible
@@ -109,7 +111,7 @@ export default function SettingsDrawer({ open, settings, onChange, onClose, onOp
               {SECTIONS.map(section => (
                 <Box key={section.key}>
                   <Stack direction="row" alignItems="center" spacing={1} mb={0.25}>
-                    <section.icon sx={{ fontSize: 18, color: 'primary.main' }} />
+                    <section.icon sx={{ fontSize: 20, color: 'primary.main' }} />
                     <Typography variant="body2" fontWeight={600}>{section.label}</Typography>
                   </Stack>
                   <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
@@ -137,24 +139,29 @@ export default function SettingsDrawer({ open, settings, onChange, onClose, onOp
                       },
                     }}
                   >
-                    {section.options.map(opt => (
-                      <ToggleButton
-                        key={opt} value={opt}
-                        sx={{
-                          textTransform: 'none', fontSize: '0.8rem', px: 2, py: 0.75,
-                          // Default Mui-selected is a faint neutral tint --
-                          // too low-contrast to read as "this one's active"
-                          // at a glance. Solid fill instead.
-                          '&.Mui-selected': {
-                            bgcolor: 'primary.main',
-                            color: '#fff',
-                            '&:hover': { bgcolor: 'primary.dark' },
-                          },
-                        }}
-                      >
-                        {opt}
-                      </ToggleButton>
-                    ))}
+                    {section.options.map(opt => {
+                      const ProviderIcon = PROVIDER_ICON[opt]
+                      return (
+                        <ToggleButton
+                          key={opt} value={opt}
+                          sx={{
+                            textTransform: 'none', fontSize: '0.8rem', px: 2, py: 0.75,
+                            gap: 0.6,
+                            // Default Mui-selected is a faint neutral tint --
+                            // too low-contrast to read as "this one's active"
+                            // at a glance. Solid fill instead.
+                            '&.Mui-selected': {
+                              bgcolor: 'primary.main',
+                              color: '#fff',
+                              '&:hover': { bgcolor: 'primary.dark' },
+                            },
+                          }}
+                        >
+                          {ProviderIcon && <ProviderIcon sx={{ fontSize: 16 }} />}
+                          {opt}
+                        </ToggleButton>
+                      )
+                    })}
                   </ToggleButtonGroup>
                 </Box>
               ))}
@@ -164,7 +171,7 @@ export default function SettingsDrawer({ open, settings, onChange, onClose, onOp
           <Stack spacing={1} alignItems="center" sx={{ pt: 1 }}>
             {SECTIONS.map(section => (
               <Tooltip key={section.key} title={`${section.label}: ${settings[section.key]}`} placement="left">
-                <IconButton size="small" onClick={onOpen} aria-label={`Expand ${section.label}`}>
+                <IconButton size="medium" onClick={onOpen} aria-label={`Expand ${section.label}`}>
                   <section.icon sx={{ fontSize: 20, color: 'primary.main' }} />
                 </IconButton>
               </Tooltip>

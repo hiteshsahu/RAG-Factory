@@ -9,6 +9,7 @@ import LinkIcon from '@mui/icons-material/Link'
 import DescriptionIcon from '@mui/icons-material/Description'
 import ArticleIcon from '@mui/icons-material/Article'
 import { formatBytes, type PipelineSettings } from '../data'
+import { PROVIDER_ICON } from './icons/ProviderIcons'
 
 interface Props {
   onStart: (files: File[], urls: string[]) => void
@@ -24,11 +25,12 @@ const FileIcon = ({ name }: { name: string }) => {
   return <DescriptionIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
 }
 
+// Embed/Generate map to an actual provider brand icon; Store/Chunk don't.
 const providerChips = (settings: PipelineSettings) => [
-  { label: `Embed: ${settings.embedProvider}`,  color: 'primary'   as const },
-  { label: `Store: ${settings.vectorStore}`,    color: 'secondary' as const },
-  { label: `Chunk: ${settings.chunkStrategy}`,  color: 'default'   as const },
-  { label: `Generate: ${settings.llmProvider}`, color: 'primary'   as const },
+  { label: `Embed: ${settings.embedProvider}`,  color: 'primary'   as const, icon: PROVIDER_ICON[settings.embedProvider] },
+  { label: `Store: ${settings.vectorStore}`,    color: 'secondary' as const, icon: undefined },
+  { label: `Chunk: ${settings.chunkStrategy}`,  color: 'default'   as const, icon: undefined },
+  { label: `Generate: ${settings.llmProvider}`, color: 'primary'   as const, icon: PROVIDER_ICON[settings.llmProvider] },
 ]
 
 export default function DropState({ onStart, settings, onOpenSettings }: Props) {
@@ -157,9 +159,10 @@ export default function DropState({ onStart, settings, onOpenSettings }: Props) 
 
         {/* Provider chips -- click any of them to open pipeline settings */}
         <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="center">
-          {providerChips(settings).map(({ label, color }, i) => (
+          {providerChips(settings).map(({ label, color, icon: ProviderIcon }, i) => (
             <Chip
               key={i} label={label} size="small" color={color} variant="outlined"
+              icon={ProviderIcon ? <ProviderIcon sx={{ fontSize: 14 }} /> : undefined}
               onClick={onOpenSettings}
               sx={{ cursor: 'pointer' }}
             />

@@ -1,10 +1,12 @@
 import React, { useEffect, useRef } from 'react'
 import {
   Alert, AlertTitle, Box, Button, Card, CircularProgress, Container,
-  Grid, LinearProgress, Stack, Typography,
+  Grid, LinearProgress, Stack, ToggleButton, Tooltip, Typography,
 } from '@mui/material'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import ErrorIcon from '@mui/icons-material/Error'
+import PlayCircleIcon from '@mui/icons-material/PlayCircle'
+import PauseCircleIcon from '@mui/icons-material/PauseCircle'
 import { STAGES } from '../data'
 
 interface LogLine { text: string; kind: 'default' | 'success' | 'error' }
@@ -17,11 +19,18 @@ interface Props {
   logs: LogLine[]
   onRetry: () => void
   onReset: () => void
+  autoAdvance: boolean
+  onToggleAutoAdvance: () => void
+  onContinue: () => void
 }
 
-export default function ProcessState({ stagesDone, activeStage, failedStage, stageStats, logs, onRetry, onReset }: Props) {
+export default function ProcessState({
+  stagesDone, activeStage, failedStage, stageStats, logs, onRetry, onReset,
+  autoAdvance, onToggleAutoAdvance, onContinue,
+}: Props) {
   const logRef = useRef<HTMLDivElement>(null)
   const failed = failedStage !== null
+  const complete = !failed && stagesDone === STAGES.length
 
   useEffect(() => {
     if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight
@@ -39,12 +48,40 @@ export default function ProcessState({ stagesDone, activeStage, failedStage, sta
             <Typography variant="body1" color="text.secondary" sx={{ fontFamily: '"JetBrains Mono",monospace' }}>
               Pipeline · {stagesDone} / {STAGES.length} stages
             </Typography>
-            <Typography variant="body1" color={failed ? 'error' : 'primary'} sx={{ fontFamily: '"JetBrains Mono",monospace', fontWeight: 600 }}>
-              {failed ? 'failed' : `${progress}%`}
-            </Typography>
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              <Tooltip title={autoAdvance ? 'Auto-advances to chat when the pipeline finishes' : 'Stays here so you can see each stage’s result'}>
+                <ToggleButton
+                  value="autoAdvance"
+                  selected={autoAdvance}
+                  onChange={onToggleAutoAdvance}
+                  size="small"
+                  sx={{
+                    textTransform: 'none', fontSize: '0.75rem', px: 1.5, py: 0.5, gap: 0.6,
+                    border: '1px solid', borderColor: 'divider', borderRadius: '8px !important',
+                    '&.Mui-selected': { bgcolor: 'primary.main', color: '#fff', '&:hover': { bgcolor: 'primary.dark' } },
+                  }}
+                >
+                  {autoAdvance ? <PlayCircleIcon sx={{ fontSize: 16 }} /> : <PauseCircleIcon sx={{ fontSize: 16 }} />}
+                  Auto-advance
+                </ToggleButton>
+              </Tooltip>
+              <Typography variant="body1" color={failed ? 'error' : 'primary'} sx={{ fontFamily: '"JetBrains Mono",monospace', fontWeight: 600 }}>
+                {failed ? 'failed' : `${progress}%`}
+              </Typography>
+            </Stack>
           </Stack>
           <LinearProgress variant="determinate" value={progress} color={failed ? 'error' : 'primary'} sx={{ height: 6, borderRadius: 3 }} />
         </Box>
+
+        {/* Auto-advance paused -- pipeline is done, waiting for the user */}
+        {complete && !autoAdvance && (
+          <Alert
+            severity="success"
+            action={<Button color="inherit" size="small" variant="outlined" onClick={onContinue}>Continue to chat →</Button>}
+          >
+            Pipeline complete — review the stage results below, then continue when you're ready.
+          </Alert>
+        )}
 
         {/* Failure banner */}
         {failed && failedStage !== null && (

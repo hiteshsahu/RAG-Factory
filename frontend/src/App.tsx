@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   AppBar, Box, Chip, CircularProgress,
   CssBaseline, IconButton, ThemeProvider, Toolbar, Typography,
@@ -15,6 +15,7 @@ import ProcessState from './components/ProcessState'
 import ChatState from './components/ChatState'
 import SettingsDrawer from './components/SettingsDrawer'
 import HistoryDrawer, { type CorpusHistory, type SourceType } from './components/HistoryDrawer'
+import { PROVIDER_ICON } from './components/icons/ProviderIcons'
 
 type AppState = 'drop' | 'process' | 'chat'
 
@@ -48,13 +49,17 @@ export default function App() {
   const [corpusStats, setCorpusStats] = useState<CorpusStats | null>(null)
   const [suggestedQuestions, setSuggestedQuestions] = useState<string[]>([])
   const [corpusName, setCorpusName] = useState('')
+  // Off by default behavior is "jump straight to chat" -- this just lets
+  // that be paused so the final stage tiles/log are still on screen to
+  // actually look at, instead of vanishing 500ms after the run finishes.
+  const [autoAdvance, setAutoAdvance] = useLocalStorage<boolean>('raginator:auto-advance', true)
   const [settings, setSettings] = useLocalStorage<PipelineSettings>('raginator:settings', DEFAULT_SETTINGS)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
-  // v2: corpus history entries now carry a full stats snapshot instead of
-  // just a doc count -- bumped key so old-schema entries (which would crash
-  // reading corpus.stats.docs) are abandoned rather than loaded and broken.
-  const [corpusHistory, setCorpusHistory] = useLocalStorage<CorpusHistory[]>('raginator:corpus-history-v2', [])
+  // v3: added per-corpus suggestedQuestions (v2 added the stats snapshot) --
+  // bumped key again so entries missing the new field are abandoned rather
+  // than loaded with `undefined` suggestions.
+  const [corpusHistory, setCorpusHistory] = useLocalStorage<CorpusHistory[]>('raginator:corpus-history-v3', [])
   const [historyOpen, setHistoryOpen] = useState(false)
   const [activeCorpusId, setActiveCorpusId] = useState<string | null>(null)
   const [activeQueryId, setActiveQueryId] = useState<number | null>(null)
@@ -70,6 +75,11 @@ export default function App() {
     corpusHistory.reduce((max, c) => c.queries.reduce((m, q) => Math.max(m, q.id), max), 0),
   )
   const corpusIdRef = useRef(corpusHistory.length)
+  // runPipeline reads this instead of the `autoAdvance` closure var so
+  // toggling it mid-run (after Start, before the 'complete' event arrives)
+  // still takes effect on that same run, not just the next one.
+  const autoAdvanceRef = useRef(autoAdvance)
+  useEffect(() => { autoAdvanceRef.current = autoAdvance }, [autoAdvance])
 
   const addLog = useCallback((text: string, kind: LogLine['kind'] = 'default') => {
     setLogs(l => [...l, { text, kind }])
@@ -147,14 +157,17 @@ export default function App() {
                 corpusName: name,
                 sourceType: sourceTypeOf(files, urls),
                 stats: event.corpusStats ?? FALLBACK_CORPUS_STATS,
+                suggestedQuestions: event.suggestedQuestions ?? [],
                 createdAt: Date.now(),
                 queries: [],
               },
               ...h,
             ])
 
-            await sleep(500)
-            setAppState('chat')
+            if (autoAdvanceRef.current) {
+              await sleep(500)
+              setAppState('chat')
+            }
             return
           }
         }
@@ -164,6 +177,10 @@ export default function App() {
       setFailedStage(PREFLIGHT_STAGE)
     }
   }, [addLog, settings, setCorpusHistory])
+
+  // Manual escape hatch for when auto-advance is off and the pipeline has
+  // already finished -- the stage tiles/log stay on screen until this fires.
+  const continueToChat = useCallback(() => setAppState('chat'), [])
 
   const handleRetry = useCallback(() => {
     const { files, urls } = lastRunRef.current
@@ -232,6 +249,7 @@ export default function App() {
     // one corpus at a time), but accurate for what this conversation was
     // originally about, which is what the stats card should reflect.
     setCorpusStats(corpus.stats)
+    setSuggestedQuestions(corpus.suggestedQuestions)
     setActiveCorpusId(corpusId)
     setActiveQueryId(queryId)
     // History is global (visible from drop/process too) but a restored
@@ -249,6 +267,7 @@ export default function App() {
     setMessages(corpus.queries.flatMap(q => q.messages))
     setCorpusName(corpus.corpusName)
     setCorpusStats(corpus.stats)
+    setSuggestedQuestions(corpus.suggestedQuestions)
     setActiveCorpusId(corpusId)
     setActiveQueryId(corpus.queries[corpus.queries.length - 1]?.id ?? null)
     setAppState('chat')
@@ -287,6 +306,7 @@ export default function App() {
             </Typography>
 
             <Chip
+              icon={React.createElement(PROVIDER_ICON[settings.embedProvider], { sx: { fontSize: 14 } })}
               label={`${settings.embedProvider} · ${settings.vectorStore}`}
               size="small" variant="outlined"
               onClick={() => setSettingsOpen(true)}
@@ -340,6 +360,9 @@ export default function App() {
                 logs={logs}
                 onRetry={handleRetry}
                 onReset={handleReset}
+                autoAdvance={autoAdvance}
+                onToggleAutoAdvance={() => setAutoAdvance(v => !v)}
+                onContinue={continueToChat}
               />
             )}
 

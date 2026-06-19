@@ -11,7 +11,8 @@ import CheckIcon from '@mui/icons-material/Check'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import CloseIcon from '@mui/icons-material/Close'
 import HistoryIcon from '@mui/icons-material/History'
-import { DEMO_QA, formatBytes, type CorpusStats, type Message, type SourceChunk } from '../data'
+import { DEMO_QA, EMBED_MODELS, formatBytes, type CorpusStats, type Message, type Provider, type SourceChunk } from '../data'
+import { PROVIDER_ICON } from './icons/ProviderIcons'
 
 interface Props {
   corpusName: string
@@ -25,12 +26,18 @@ interface Props {
   onReset: () => void
 }
 
+// `embeddingModel` is a free-form string like "nomic-embed-text · 768-dim"
+// (built server-side from the same EMBED_MODELS table) -- match its model
+// name back to a provider so the stat can show that provider's icon.
+const providerOfModel = (embeddingModel: string): Provider | undefined =>
+  (Object.keys(EMBED_MODELS) as Provider[]).find(p => embeddingModel.includes(EMBED_MODELS[p].name))
+
 const STAT_ITEMS = (stats: CorpusStats) => [
-  { label: 'Documents',       value: String(stats.docs) },
-  { label: 'Chunks',          value: stats.chunks.toLocaleString() },
-  { label: 'Avg chunk size',  value: `${stats.avgChunkTokens} tok` },
-  { label: 'Embedding model', value: stats.embeddingModel },
-  { label: 'Index size',      value: formatBytes(stats.indexSizeBytes) },
+  { label: 'Documents',       value: String(stats.docs), icon: undefined },
+  { label: 'Chunks',          value: stats.chunks.toLocaleString(), icon: undefined },
+  { label: 'Avg chunk size',  value: `${stats.avgChunkTokens} tok`, icon: undefined },
+  { label: 'Embedding model', value: stats.embeddingModel, icon: PROVIDER_ICON[providerOfModel(stats.embeddingModel) ?? ''] },
+  { label: 'Index size',      value: formatBytes(stats.indexSizeBytes), icon: undefined },
 ]
 
 const IS_MAC = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
@@ -128,7 +135,7 @@ export default function ChatState({
             "Corpus ready" now lives in the bar above, next to Reset. */}
         <Card sx={{ p: 2.5 }}>
           <Grid container spacing={2}>
-            {STAT_ITEMS(stats).map(({ label, value }) => (
+            {STAT_ITEMS(stats).map(({ label, value, icon: StatIcon }) => (
               <Grid item xs={6} sm={4} md={2.4} key={label}>
                 <Typography
                   variant="caption" color="text.secondary"
@@ -136,9 +143,12 @@ export default function ChatState({
                 >
                   {label}
                 </Typography>
-                <Typography variant="body2" fontWeight={600} sx={{ mt: 0.25 }}>
-                  {value}
-                </Typography>
+                <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mt: 0.25 }}>
+                  {StatIcon && <StatIcon sx={{ fontSize: 15 }} />}
+                  <Typography variant="body2" fontWeight={600}>
+                    {value}
+                  </Typography>
+                </Stack>
               </Grid>
             ))}
           </Grid>
