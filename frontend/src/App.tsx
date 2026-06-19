@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   AppBar, Box, Chip, CircularProgress,
   CssBaseline, IconButton, ThemeProvider, Toolbar, Typography,
@@ -15,7 +15,7 @@ import ProcessState from './components/ProcessState'
 import ChatState from './components/ChatState'
 import SettingsDrawer from './components/SettingsDrawer'
 import HistoryDrawer, { type CorpusHistory, type SourceType } from './components/HistoryDrawer'
-import { PROVIDER_ICON } from './components/icons/ProviderIcons'
+import { providerIcon } from './components/icons/ProviderIcons'
 
 type AppState = 'drop' | 'process' | 'chat'
 
@@ -317,11 +317,11 @@ export default function App() {
             </Typography>
 
             <Chip
-              icon={React.createElement(PROVIDER_ICON[settings.embedProvider], { sx: { fontSize: 14 } })}
+              icon={providerIcon(settings.embedProvider, 14)}
               label={`${settings.embedProvider} · ${settings.vectorStore}`}
               size="small" variant="outlined"
               onClick={() => setSettingsOpen(true)}
-              sx={{ fontFamily: '"JetBrains Mono",monospace', fontSize: '0.68rem', cursor: 'pointer' }}
+              sx={{ fontSize: '0.68rem', cursor: 'pointer' }}
             />
             <Chip
               label={statusLabel}

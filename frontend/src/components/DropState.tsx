@@ -9,7 +9,7 @@ import LinkIcon from '@mui/icons-material/Link'
 import DescriptionIcon from '@mui/icons-material/Description'
 import ArticleIcon from '@mui/icons-material/Article'
 import { formatBytes, type PipelineSettings } from '../data'
-import { PROVIDER_ICON } from './icons/ProviderIcons'
+import { providerIcon } from './icons/ProviderIcons'
 
 interface Props {
   onStart: (files: File[], urls: string[]) => void
@@ -27,10 +27,10 @@ const FileIcon = ({ name }: { name: string }) => {
 
 // Embed/Generate map to an actual provider brand icon; Store/Chunk don't.
 const providerChips = (settings: PipelineSettings) => [
-  { label: `Embed: ${settings.embedProvider}`,  color: 'primary'   as const, icon: PROVIDER_ICON[settings.embedProvider] },
+  { label: `Embed: ${settings.embedProvider}`,  color: 'primary'   as const, icon: providerIcon(settings.embedProvider, 14) },
   { label: `Store: ${settings.vectorStore}`,    color: 'secondary' as const, icon: undefined },
   { label: `Chunk: ${settings.chunkStrategy}`,  color: 'default'   as const, icon: undefined },
-  { label: `Generate: ${settings.llmProvider}`, color: 'primary'   as const, icon: PROVIDER_ICON[settings.llmProvider] },
+  { label: `Generate: ${settings.llmProvider}`, color: 'primary'   as const, icon: providerIcon(settings.llmProvider, 14) },
 ]
 
 export default function DropState({ onStart, settings, onOpenSettings }: Props) {
@@ -159,10 +159,10 @@ export default function DropState({ onStart, settings, onOpenSettings }: Props) 
 
         {/* Provider chips -- click any of them to open pipeline settings */}
         <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="center">
-          {providerChips(settings).map(({ label, color, icon: ProviderIcon }, i) => (
+          {providerChips(settings).map(({ label, color, icon }, i) => (
             <Chip
               key={i} label={label} size="small" color={color} variant="outlined"
-              icon={ProviderIcon ? <ProviderIcon sx={{ fontSize: 14 }} /> : undefined}
+              icon={icon}
               onClick={onOpenSettings}
               sx={{ cursor: 'pointer' }}
             />

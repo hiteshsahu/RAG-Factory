@@ -73,8 +73,8 @@ export const EMBED_MODELS: Record<Provider, { name: string; dim: number }> = {
 
 export const LLM_MODELS: Record<Provider, string> = {
   Mistral: 'mistral-small-latest',
-  OpenAI: 'gpt-4o-mini',
-  Ollama: 'llama3.2',
+  OpenAI:  'gpt-4o-mini',
+  Ollama:  'llama3.2',
 }
 
 export const STAGES: Stage[] = [

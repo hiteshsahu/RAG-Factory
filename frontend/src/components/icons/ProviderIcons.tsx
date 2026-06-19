@@ -40,3 +40,12 @@ export const PROVIDER_ICON: Record<string, React.ElementType<BoxProps>> = {
   OpenAI: OpenAIIcon,
   Ollama: OllamaIcon,
 }
+
+// Every call site just wants "this provider's icon at this size, or nothing"
+// -- folds the lookup + missing-icon guard that was repeated at each of the
+// 4 places a provider name is rendered (AppBar chip, DropState chips, the
+// embedding-model stat, SettingsDrawer's toggle buttons) into one helper.
+export function providerIcon(provider: string, size: number): React.ReactElement | undefined {
+  const Icon = PROVIDER_ICON[provider]
+  return Icon ? <Icon sx={{ fontSize: size }} /> : undefined
+}

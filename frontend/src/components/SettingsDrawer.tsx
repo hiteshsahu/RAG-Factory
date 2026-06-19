@@ -1,18 +1,16 @@
 import React, { useRef, useState } from 'react'
 import {
-  Alert, Box, Divider, Drawer, IconButton, Stack, Tooltip,
+  Alert, Box, Divider, IconButton, Stack, Tooltip,
   ToggleButton, ToggleButtonGroup, Typography,
 } from '@mui/material'
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
-import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import ContentCutIcon from '@mui/icons-material/ContentCut'
-import BubbleChartIcon from '@mui/icons-material/BubbleChart'
 import FormatShapesIcon from '@mui/icons-material/FormatShapes';
 import StorageIcon from '@mui/icons-material/Storage'
 import PsychologyIcon from '@mui/icons-material/Psychology';
-import type { Theme } from '@mui/material'
 import type { PipelineSettings } from '../data'
-import { PROVIDER_ICON } from './icons/ProviderIcons'
+import { providerIcon } from './icons/ProviderIcons'
+import { vectorStoreIcon } from './icons/VectorStoreIcons'
+import PersistentSidebar from './PersistentSidebar'
 
 const TOAST_LIFETIME_MS = 2500
 const MINI_WIDTH = 64
@@ -67,107 +65,17 @@ export default function SettingsDrawer({ open, settings, onChange, onClose, onOp
     pushToast(`${section?.label ?? key} → ${value}`)
   }
 
-  const width = open ? FULL_WIDTH : MINI_WIDTH
-  const widthTransition = (theme: Theme) =>
-    theme.transitions.create('width', { duration: theme.transitions.duration.shorter })
-
   return (
-    <Drawer
-      variant="persistent"
-      anchor="right"
-      open
-      sx={{
-        width,
-        flexShrink: 0,
-        overflowX: 'hidden',
-        transition: widthTransition,
-        '& .MuiDrawer-paper': {
-          width, boxSizing: 'border-box', position: 'relative', overflowX: 'hidden',
-          transition: widthTransition,
-        },
-      }}
-    >
-      <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-        <Stack
-          direction="row" alignItems="center"
-          justifyContent={open ? 'space-between' : 'center'}
-          sx={{ px: open ? 2.5 : 1, py: 2 }}
-        >
-          {open && <Typography variant="h6" fontWeight={600}>Settings</Typography>}
-          <Tooltip title={open ? 'Collapse' : 'Expand settings'} placement="left">
-            <IconButton size="small" onClick={open ? onClose : onOpen} aria-label={open ? 'Collapse settings' : 'Expand settings'}>
-              {open ? <ChevronRightIcon sx={{ fontSize: 18 }} /> : <ChevronLeftIcon sx={{ fontSize: 18 }} />}
-            </IconButton>
-          </Tooltip>
-        </Stack>
-
-        {open ? (
-          <Box sx={{ px: 2.5, pb: 3, flex: 1, minHeight: 0, overflowY: 'auto' }}>
-            <Typography variant="body2" color="text.secondary" mb={3}>
-              Takes effect on the next run. Saved automatically.
-            </Typography>
-
-            <Stack spacing={3} divider={<Divider flexItem />}>
-              {SECTIONS.map(section => (
-                <Box key={section.key}>
-                  <Stack direction="row" alignItems="center" spacing={1} mb={0.25}>
-                    <section.icon sx={{ fontSize: 20, color: 'primary.main' }} />
-                    <Typography variant="body2" fontWeight={600}>{section.label}</Typography>
-                  </Stack>
-                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-                    {section.hint}
-                  </Typography>
-                  <ToggleButtonGroup
-                    exclusive
-                    size="small"
-                    value={settings[section.key]}
-                    onChange={(_, value) => setValue(section.key, value)}
-                    sx={{
-                      flexWrap: 'wrap',
-                      gap: 0.75,
-                      // ToggleButtonGroup's segmented-control CSS only rounds
-                      // the literal first/last child in the DOM -- fine for a
-                      // single row, but with flexWrap (4 options don't fit on
-                      // one line at this width) every wrapped-row edge button
-                      // was left square. Give each button its own full radius
-                      // and border instead of relying on that DOM-order logic.
-                      '& .MuiToggleButtonGroup-grouped': {
-                        margin: 0,
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        borderRadius: '8px !important',
-                      },
-                    }}
-                  >
-                    {section.options.map(opt => {
-                      const ProviderIcon = PROVIDER_ICON[opt]
-                      return (
-                        <ToggleButton
-                          key={opt} value={opt}
-                          sx={{
-                            textTransform: 'none', fontSize: '0.8rem', px: 2, py: 0.75,
-                            gap: 0.6,
-                            // Default Mui-selected is a faint neutral tint --
-                            // too low-contrast to read as "this one's active"
-                            // at a glance. Solid fill instead.
-                            '&.Mui-selected': {
-                              bgcolor: 'primary.main',
-                              color: '#fff',
-                              '&:hover': { bgcolor: 'primary.dark' },
-                            },
-                          }}
-                        >
-                          {ProviderIcon && <ProviderIcon sx={{ fontSize: 16 }} />}
-                          {opt}
-                        </ToggleButton>
-                      )
-                    })}
-                  </ToggleButtonGroup>
-                </Box>
-              ))}
-            </Stack>
-          </Box>
-        ) : (
+    <>
+      <PersistentSidebar
+        anchor="right"
+        open={open}
+        onOpen={onOpen}
+        onClose={onClose}
+        title="Settings"
+        fullWidth={FULL_WIDTH}
+        miniWidth={MINI_WIDTH}
+        collapsedContent={
           <Stack spacing={1} alignItems="center" sx={{ pt: 1 }}>
             {SECTIONS.map(section => (
               <Tooltip key={section.key} title={`${section.label}: ${settings[section.key]}`} placement="left">
@@ -177,9 +85,81 @@ export default function SettingsDrawer({ open, settings, onChange, onClose, onOp
               </Tooltip>
             ))}
           </Stack>
-        )}
-      </Box>
+        }
+      >
+        <Box sx={{ px: 2.5, pb: 3, flex: 1, minHeight: 0, overflowY: 'auto' }}>
+          <Typography variant="body2" color="text.secondary" mb={3}>
+            Takes effect on the next run. Saved automatically.
+          </Typography>
 
+          <Stack spacing={3} divider={<Divider flexItem />}>
+            {SECTIONS.map(section => (
+              <Box key={section.key}>
+                <Stack direction="row" alignItems="center" spacing={1} mb={0.25}>
+                  <section.icon sx={{ fontSize: 20, color: 'primary.main' }} />
+                  <Typography variant="body2" fontWeight={600}>{section.label}</Typography>
+                </Stack>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                  {section.hint}
+                </Typography>
+                <ToggleButtonGroup
+                  exclusive
+                  size="small"
+                  value={settings[section.key]}
+                  onChange={(_, value) => setValue(section.key, value)}
+                  sx={{
+                    // 2 options always fit one row as a flex line. 3+ (the
+                    // provider sections, and chunkStrategy's 4) don't fit
+                    // this drawer's width on one line with icons -- flex-wrap
+                    // left the last one stranded alone on its own row, only
+                    // half as wide as the row above it. A real 2-column grid
+                    // instead, so every button is the same width.
+                    ...(section.options.length > 2
+                      ? { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)' }
+                      : { display: 'flex', flexWrap: 'wrap' }),
+                    gap: 0.75,
+                    // ToggleButtonGroup's segmented-control CSS only rounds
+                    // the literal first/last child in the DOM -- fine for a
+                    // single row, but with wrapping, every wrapped-row edge
+                    // button was left square. Give each button its own full
+                    // radius and border instead of relying on DOM-order logic.
+                    '& .MuiToggleButtonGroup-grouped': {
+                      margin: 0,
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      borderRadius: '8px !important',
+                    },
+                  }}
+                >
+                  {section.options.map(opt => (
+                    <ToggleButton
+                      key={opt} value={opt}
+                      sx={{
+                        textTransform: 'none', fontSize: '0.8rem', px: 2, py: 0.75,
+                        gap: 0.6,
+                        // Default Mui-selected is a faint neutral tint --
+                        // too low-contrast to read as "this one's active"
+                        // at a glance. Solid fill instead.
+                        '&.Mui-selected': {
+                          bgcolor: 'primary.main',
+                          color: '#fff',
+                          '&:hover': { bgcolor: 'primary.dark' },
+                        },
+                      }}
+                    >
+                      {providerIcon(opt, 16) ?? vectorStoreIcon(opt, 16)}
+                      {opt}
+                    </ToggleButton>
+                  ))}
+                </ToggleButtonGroup>
+              </Box>
+            ))}
+          </Stack>
+        </Box>
+      </PersistentSidebar>
+
+      {/* Always visible regardless of open/collapsed -- a toast already
+          in flight shouldn't vanish just because the drawer got collapsed. */}
       <Box
         sx={{
           position: 'fixed', bottom: 16, left: 16, zIndex: 1500,
@@ -197,6 +177,6 @@ export default function SettingsDrawer({ open, settings, onChange, onClose, onOp
           </Alert>
         ))}
       </Box>
-    </Drawer>
+    </>
   )
 }

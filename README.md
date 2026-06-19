@@ -163,6 +163,26 @@ pip install -e ".[dev]"     # all stages + pytest, ruff, mypy
 
 Each stage's tests also run independently, e.g. `pytest raginator/chunk/tests`.
 
+
+---
+
+## Troubleshoot
+
+**Backend cant be started** 
+
+> Error while attempting to bind on address ('127.0.0.1', 8001): address already in use
+
+Kill orphan Python:
+
+```bash
+# find pid using port 8001
+lsof -i :8001
+
+# kill process
+kill -9 1234
+
+```
+
 ---
 
 ## 📂 Project Layout

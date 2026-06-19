@@ -145,6 +145,11 @@ export default function ProcessState({
             const active  = !isFailed && i === activeStage && i >= stagesDone
             const waiting = !isFailed && i > activeStage
             const StageIcon = STAGE_ICON[s.num]
+            // Same accent for the stage number, its icon, and (once it's
+            // actually done) the stat line -- computed once instead of
+            // repeating the same ternary at each usage.
+            const accent = isFailed ? 'error.main' : done || active ? 'primary.main' : 'text.secondary'
+            const statColor = isFailed ? 'error.main' : done ? 'primary.main' : 'text.secondary'
 
             return (
               <Grid item xs={6} sm={4} md={3} key={i}>
@@ -168,7 +173,7 @@ export default function ProcessState({
                     <Stack direction="row" justifyContent="space-between" alignItems="center">
                       <Typography
                         variant="body2"
-                        sx={{ fontFamily: '"JetBrains Mono",monospace', color: isFailed ? 'error.main' : done || active ? 'primary.main' : 'text.secondary' }}
+                        sx={{ fontFamily: '"JetBrains Mono",monospace', color: accent }}
                       >
                         s{s.num}
                       </Typography>
@@ -178,12 +183,7 @@ export default function ProcessState({
                     </Stack>
 
                     <Stack direction="row" spacing={1} alignItems="center">
-                      <StageIcon
-                        sx={{
-                          fontSize: 22,
-                          color: isFailed ? 'error.main' : done || active ? 'primary.main' : 'text.secondary',
-                        }}
-                      />
+                      <StageIcon sx={{ fontSize: 22, color: accent }} />
                       <Typography variant="h6" fontWeight={600}>{s.name}</Typography>
                     </Stack>
 
@@ -193,10 +193,7 @@ export default function ProcessState({
 
                     <Typography
                       variant="body2"
-                      sx={{
-                        fontFamily: '"JetBrains Mono",monospace', fontSize: '0.75rem', mt: 0.5,
-                        color: isFailed ? 'error.main' : done ? 'primary.main' : 'text.secondary',
-                      }}
+                      sx={{ fontFamily: '"JetBrains Mono",monospace', fontSize: '0.75rem', mt: 0.5, color: statColor }}
                     >
                       {isFailed ? 'failed' : done ? (stageStats[i] ?? s.stats) : active ? 'running…' : 'waiting…'}
                     </Typography>

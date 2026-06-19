@@ -12,7 +12,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import CloseIcon from '@mui/icons-material/Close'
 import HistoryIcon from '@mui/icons-material/History'
 import { DEMO_QA, EMBED_MODELS, formatBytes, type CorpusStats, type Message, type Provider, type SourceChunk } from '../data'
-import { PROVIDER_ICON } from './icons/ProviderIcons'
+import { providerIcon } from './icons/ProviderIcons'
 
 interface Props {
   corpusName: string
@@ -36,8 +36,14 @@ const STAT_ITEMS = (stats: CorpusStats) => [
   { label: 'Documents',       value: String(stats.docs), icon: undefined },
   { label: 'Chunks',          value: stats.chunks.toLocaleString(), icon: undefined },
   { label: 'Avg chunk size',  value: `${stats.avgChunkTokens} tok`, icon: undefined },
-  { label: 'Embedding model', value: stats.embeddingModel, icon: PROVIDER_ICON[providerOfModel(stats.embeddingModel) ?? ''] },
+  { label: 'Embedding model', value: stats.embeddingModel, icon: providerIcon(providerOfModel(stats.embeddingModel) ?? '', 15) },
   { label: 'Index size',      value: formatBytes(stats.indexSizeBytes), icon: undefined },
+]
+
+const corpusBarChips = (corpusName: string, stats: CorpusStats) => [
+  { label: `◎ ${corpusName}`, color: 'primary' as const },
+  { label: `${stats.chunks.toLocaleString()} chunks`, color: 'default' as const },
+  { label: `${stats.docs} doc${stats.docs === 1 ? '' : 's'}`, color: 'default' as const },
 ]
 
 const IS_MAC = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
@@ -114,9 +120,9 @@ export default function ChatState({
             <HistoryIcon sx={{ fontSize: 18 }} />
           </IconButton>
         </Tooltip>
-        <Chip label={`◎ ${corpusName}`} size="small" color="primary" variant="outlined" />
-        <Chip label={`${stats.chunks.toLocaleString()} chunks`} size="small" variant="outlined" />
-        <Chip label={`${stats.docs} doc${stats.docs === 1 ? '' : 's'}`} size="small" variant="outlined" />
+        {corpusBarChips(corpusName, stats).map((c, i) => (
+          <Chip key={i} label={c.label} size="small" color={c.color} variant="outlined" />
+        ))}
         <Box sx={{ flex: 1 }} />
         <Chip
           icon={<CheckCircleIcon sx={{ fontSize: 14 }} />}
@@ -135,7 +141,7 @@ export default function ChatState({
             "Corpus ready" now lives in the bar above, next to Reset. */}
         <Card sx={{ p: 2.5 }}>
           <Grid container spacing={2}>
-            {STAT_ITEMS(stats).map(({ label, value, icon: StatIcon }) => (
+            {STAT_ITEMS(stats).map(({ label, value, icon }) => (
               <Grid item xs={6} sm={4} md={2.4} key={label}>
                 <Typography
                   variant="caption" color="text.secondary"
@@ -144,7 +150,7 @@ export default function ChatState({
                   {label}
                 </Typography>
                 <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mt: 0.25 }}>
-                  {StatIcon && <StatIcon sx={{ fontSize: 15 }} />}
+                  {icon}
                   <Typography variant="body2" fontWeight={600}>
                     {value}
                   </Typography>
@@ -278,7 +284,7 @@ export default function ChatState({
                 <Chip
                   label={IS_MAC ? '⌘K' : 'Ctrl K'}
                   size="small" variant="outlined"
-                  sx={{ fontFamily: '"JetBrains Mono",monospace', fontSize: '0.65rem', height: 20, color: 'text.secondary', pointerEvents: 'none' }}
+                  sx={{ fontSize: '0.65rem', height: 20, color: 'text.secondary', pointerEvents: 'none' }}
                 />
               ),
             }}
@@ -305,7 +311,7 @@ export default function ChatState({
               <Chip
                 label={`score ${previewSource.score.toFixed(2)}`}
                 size="small" variant="outlined" color="primary"
-                sx={{ fontFamily: '"JetBrains Mono",monospace', fontSize: '0.68rem' }}
+                sx={{ fontSize: '0.68rem' }}
               />
               <IconButton size="small" onClick={() => setPreviewSource(null)} sx={{ position: 'absolute', top: 8, right: 8 }}>
                 <CloseIcon sx={{ fontSize: 18 }} />
