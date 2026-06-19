@@ -169,13 +169,35 @@ export default function DropState({ onStart, settings, onOpenSettings }: Props) 
           ))}
         </Stack>
 
-        {/* CTA */}
+        {/* CTA -- gradient picks up the same primary->secondary two-tone as
+            the "RAG FACTORY" title in the AppBar, instead of a flat fill. */}
         <Button
           variant="contained" color="primary" fullWidth size="large"
           endIcon={<span style={{ fontSize: 20 }}>›</span>}
           onClick={handleStart}
           disabled={!files.length && !urls.length}
-          sx={{ py: 1.5, fontSize: '0.95rem' }}
+          sx={{
+            py: 1.5, fontSize: '0.95rem',
+            background: 'linear-gradient(135deg, #1D9E75 0%, #7F77DD 100%)',
+            boxShadow: '0 4px 14px rgba(29,158,117,0.35)',
+            transition: 'all .25s',
+            '&:hover': {
+              background: 'linear-gradient(135deg, #1bb084 0%, #8f88ea 100%)',
+              boxShadow: '0 6px 18px rgba(127,119,221,0.4)',
+            },
+            // MUI's default disabled tokens (action.disabled/disabledBackground)
+            // are deliberately low-opacity gray-on-gray -- low contrast by
+            // Material convention, but it reads as barely-there here. Use a
+            // clearly bordered, clearly legible gray instead.
+            '&.Mui-disabled': {
+              background: 'none',
+              bgcolor: theme => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)',
+              color: theme => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.55)',
+              border: '1px solid',
+              borderColor: theme => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.18)',
+              boxShadow: 'none',
+            },
+          }}
         >
           Start Raginator
         </Button>

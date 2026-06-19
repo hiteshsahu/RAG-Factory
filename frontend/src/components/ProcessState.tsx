@@ -7,9 +7,31 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import ErrorIcon from '@mui/icons-material/Error'
 import PlayCircleIcon from '@mui/icons-material/PlayCircle'
 import PauseCircleIcon from '@mui/icons-material/PauseCircle'
+import CloudUploadIcon from '@mui/icons-material/CloudUpload'
+import ContentCutIcon from '@mui/icons-material/ContentCut'
+import FormatShapesIcon from '@mui/icons-material/FormatShapes'
+import StorageIcon from '@mui/icons-material/Storage'
+import ManageSearchIcon from '@mui/icons-material/ManageSearch'
+import SortIcon from '@mui/icons-material/Sort'
+import PsychologyIcon from '@mui/icons-material/Psychology'
+import FactCheckIcon from '@mui/icons-material/FactCheck'
 import { STAGES } from '../data'
 
 interface LogLine { text: string; kind: 'default' | 'success' | 'error' }
+
+// Same glyphs as SettingsDrawer's chunk/embed/store/generate sections where
+// they overlap (stages 1, 2, 3, 6) -- one consistent icon language for the
+// same underlying concept, instead of two different icons for "chunking".
+const STAGE_ICON: Record<number, React.ElementType> = {
+  0: CloudUploadIcon,
+  1: ContentCutIcon,
+  2: FormatShapesIcon,
+  3: StorageIcon,
+  4: ManageSearchIcon,
+  5: SortIcon,
+  6: PsychologyIcon,
+  7: FactCheckIcon,
+}
 
 interface Props {
   stagesDone: number
@@ -122,6 +144,7 @@ export default function ProcessState({
             const done    = i < stagesDone
             const active  = !isFailed && i === activeStage && i >= stagesDone
             const waiting = !isFailed && i > activeStage
+            const StageIcon = STAGE_ICON[s.num]
 
             return (
               <Grid item xs={6} sm={4} md={3} key={i}>
@@ -154,7 +177,15 @@ export default function ProcessState({
                       {!isFailed && active && <CircularProgress size={16} color="primary" />}
                     </Stack>
 
-                    <Typography variant="h6" fontWeight={600}>{s.name}</Typography>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <StageIcon
+                        sx={{
+                          fontSize: 22,
+                          color: isFailed ? 'error.main' : done || active ? 'primary.main' : 'text.secondary',
+                        }}
+                      />
+                      <Typography variant="h6" fontWeight={600}>{s.name}</Typography>
+                    </Stack>
 
                     <Typography variant="body2" color="text.secondary" sx={{ fontFamily: '"JetBrains Mono",monospace', fontSize: '0.75rem' }}>
                       {s.alias}
