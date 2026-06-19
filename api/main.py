@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 from collections.abc import AsyncIterator
 from typing import Any
@@ -99,6 +100,13 @@ async def start_pipeline(
     async def event_stream() -> AsyncIterator[str]:
         async for event in run_pipeline(file_payload, parsed_settings, _STATE):
             yield _sse(event)
+            # run_pipeline's stages are blocking sync calls with no `await`
+            # between yields, so the event loop never gets a turn to actually
+            # flush the previous chunk to the socket before the next (often
+            # multi-second) stage starts -- every event ends up arriving in
+            # one final burst instead of incrementally. This forces a real
+            # checkpoint so the client sees each stage as it actually finishes.
+            await asyncio.sleep(0)
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 

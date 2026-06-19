@@ -21,8 +21,6 @@ type AppState = 'drop' | 'process' | 'chat'
 
 interface LogLine { text: string; kind: 'default' | 'success' | 'error' }
 
-const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
-
 const sourceTypeOf = (files: File[], urls: string[]): SourceType => {
   if (files.length > 0) return files[0].name.toLowerCase().endsWith('.pdf') ? 'pdf' : 'doc'
   return urls.length > 0 ? 'url' : 'doc'
@@ -75,11 +73,11 @@ export default function App() {
     corpusHistory.reduce((max, c) => c.queries.reduce((m, q) => Math.max(m, q.id), max), 0),
   )
   const corpusIdRef = useRef(corpusHistory.length)
-  // runPipeline reads this instead of the `autoAdvance` closure var so
-  // toggling it mid-run (after Start, before the 'complete' event arrives)
-  // still takes effect on that same run, not just the next one.
-  const autoAdvanceRef = useRef(autoAdvance)
-  useEffect(() => { autoAdvanceRef.current = autoAdvance }, [autoAdvance])
+  // True once the real 'complete' event has landed (corpusStats/suggestions/
+  // history already populated) -- distinct from "all 8 stage tiles are
+  // done", since the suggestion-generation LLM call still runs *after* the
+  // last stage_done event, before 'complete' actually fires.
+  const [pipelineDone, setPipelineDone] = useState(false)
 
   const addLog = useCallback((text: string, kind: LogLine['kind'] = 'default') => {
     setLogs(l => [...l, { text, kind }])
@@ -97,6 +95,7 @@ export default function App() {
     setStageStats({})
     setCorpusStats(null)
     setSuggestedQuestions([])
+    setPipelineDone(false)
 
     if (files.length === 0) {
       // The bridge only ingests real files -- WebIngestor/GitHubIngestor
@@ -164,10 +163,11 @@ export default function App() {
               ...h,
             ])
 
-            if (autoAdvanceRef.current) {
-              await sleep(500)
-              setAppState('chat')
-            }
+            // Whether we navigate now or wait for the user is decided by the
+            // effect below, which reacts live to `autoAdvance` -- including
+            // if it gets toggled on *after* this point, once the run has
+            // already finished.
+            setPipelineDone(true)
             return
           }
         }
@@ -177,6 +177,16 @@ export default function App() {
       setFailedStage(PREFLIGHT_STAGE)
     }
   }, [addLog, settings, setCorpusHistory])
+
+  // Drives the process -> chat transition off live state instead of a
+  // one-shot check inside runPipeline -- so flipping auto-advance on *after*
+  // the pipeline already finished (banner still showing, button skipped)
+  // still navigates, instead of silently doing nothing.
+  useEffect(() => {
+    if (!pipelineDone || !autoAdvance || appState !== 'process') return
+    const timer = setTimeout(() => setAppState('chat'), 500)
+    return () => clearTimeout(timer)
+  }, [pipelineDone, autoAdvance, appState])
 
   // Manual escape hatch for when auto-advance is off and the pipeline has
   // already finished -- the stage tiles/log stay on screen until this fires.
@@ -197,6 +207,7 @@ export default function App() {
     setStageStats({})
     setCorpusStats(null)
     setSuggestedQuestions([])
+    setPipelineDone(false)
     setMessages([])
     setActiveCorpusId(null)
     setActiveQueryId(null)
@@ -358,6 +369,7 @@ export default function App() {
                 failedStage={failedStage}
                 stageStats={stageStats}
                 logs={logs}
+                pipelineDone={pipelineDone}
                 onRetry={handleRetry}
                 onReset={handleReset}
                 autoAdvance={autoAdvance}

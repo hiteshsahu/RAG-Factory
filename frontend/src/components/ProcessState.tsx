@@ -17,6 +17,10 @@ interface Props {
   failedStage: number | null
   stageStats: Record<number, string>
   logs: LogLine[]
+  // True only once the real 'complete' event has landed -- not the same
+  // moment as "all 8 stage tiles show done", since suggestion generation
+  // still runs server-side for a few seconds after the last stage_done.
+  pipelineDone: boolean
   onRetry: () => void
   onReset: () => void
   autoAdvance: boolean
@@ -25,12 +29,12 @@ interface Props {
 }
 
 export default function ProcessState({
-  stagesDone, activeStage, failedStage, stageStats, logs, onRetry, onReset,
+  stagesDone, activeStage, failedStage, stageStats, logs, pipelineDone, onRetry, onReset,
   autoAdvance, onToggleAutoAdvance, onContinue,
 }: Props) {
   const logRef = useRef<HTMLDivElement>(null)
   const failed = failedStage !== null
-  const complete = !failed && stagesDone === STAGES.length
+  const complete = pipelineDone && !failed
 
   useEffect(() => {
     if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight
