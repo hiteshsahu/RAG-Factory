@@ -26,6 +26,47 @@ const sourceTypeOf = (files: File[], urls: string[]): SourceType => {
   return urls.length > 0 ? 'url' : 'doc'
 }
 
+// Re-uploading the same document (same derived name) should refresh its
+// existing history entry -- new stats/suggestions, bumped to the top -- not
+// fork off another top-level entry with the same name. Reuses the existing
+// corpusId (so it keeps lining up with `activeCorpusId`) and keeps its past
+// queries instead of discarding them.
+const upsertCorpus = (
+  history: CorpusHistory[],
+  corpusId: string,
+  corpusName: string,
+  sourceType: SourceType,
+  stats: CorpusStats,
+  suggestedQuestions: string[],
+): CorpusHistory[] => {
+  const existing = history.find(c => c.corpusName === corpusName)
+  const refreshed: CorpusHistory = {
+    corpusId,
+    corpusName,
+    sourceType,
+    stats,
+    suggestedQuestions,
+    createdAt: Date.now(),
+    queries: existing?.queries ?? [],
+  }
+  return [refreshed, ...history.filter(c => c.corpusName !== corpusName)]
+}
+
+// Folds any already-duplicated entries (e.g. from re-uploading the same
+// document before this fix existed) into one -- keeps the most recent
+// entry's metadata (history is newest-first) and merges every duplicate's
+// queries in underneath it instead of losing them.
+const dedupeCorpusHistory = (history: CorpusHistory[]): CorpusHistory[] => {
+  const byName = new Map<string, CorpusHistory>()
+  for (const corpus of history) {
+    const existing = byName.get(corpus.corpusName)
+    byName.set(corpus.corpusName, existing
+      ? { ...existing, queries: [...existing.queries, ...corpus.queries].sort((a, b) => a.timestamp - b.timestamp) }
+      : corpus)
+  }
+  return byName.size === history.length ? history : Array.from(byName.values())
+}
+
 // -1 is a sentinel for "failed before any stage started" (preflight, or a
 // connection error) -- distinct from `null` (no failure) and from a real
 // stage index (0-7).
@@ -78,6 +119,14 @@ export default function App() {
   // done", since the suggestion-generation LLM call still runs *after* the
   // last stage_done event, before 'complete' actually fires.
   const [pipelineDone, setPipelineDone] = useState(false)
+  // runPipeline's closure can go stale (it's only recreated when `settings`
+  // changes) -- this ref is how its 'complete' handler always sees the
+  // *current* history when checking for an existing corpus to refresh.
+  const corpusHistoryRef = useRef(corpusHistory)
+  useEffect(() => { corpusHistoryRef.current = corpusHistory }, [corpusHistory])
+
+  // One-time cleanup for entries duplicated before upsertCorpus existed.
+  useEffect(() => { setCorpusHistory(dedupeCorpusHistory) }, [setCorpusHistory])
 
   const addLog = useCallback((text: string, kind: LogLine['kind'] = 'default') => {
     setLogs(l => [...l, { text, kind }])
@@ -144,24 +193,19 @@ export default function App() {
             if (event.corpusStats) setCorpusStats(event.corpusStats)
             if (event.suggestedQuestions) setSuggestedQuestions(event.suggestedQuestions)
 
-            // A successful upload starts a new corpus group at the top of
-            // history -- every question asked from here on (until the next
-            // upload or reset) nests under it.
-            const corpusId = `corpus-${++corpusIdRef.current}`
+            // A successful upload starts (or refreshes) a corpus group at
+            // the top of history -- every question asked from here on
+            // (until the next upload or reset) nests under it. Re-uploading
+            // the same document (same derived name) reuses its existing
+            // entry instead of forking a duplicate.
+            const existing = corpusHistoryRef.current.find(c => c.corpusName === name)
+            const corpusId = existing?.corpusId ?? `corpus-${++corpusIdRef.current}`
             setActiveCorpusId(corpusId)
             setActiveQueryId(null)
-            setCorpusHistory(h => [
-              {
-                corpusId,
-                corpusName: name,
-                sourceType: sourceTypeOf(files, urls),
-                stats: event.corpusStats ?? FALLBACK_CORPUS_STATS,
-                suggestedQuestions: event.suggestedQuestions ?? [],
-                createdAt: Date.now(),
-                queries: [],
-              },
-              ...h,
-            ])
+            setCorpusHistory(h => upsertCorpus(
+              h, corpusId, name, sourceTypeOf(files, urls),
+              event.corpusStats ?? FALLBACK_CORPUS_STATS, event.suggestedQuestions ?? [],
+            ))
 
             // Whether we navigate now or wait for the user is decided by the
             // effect below, which reacts live to `autoAdvance` -- including
