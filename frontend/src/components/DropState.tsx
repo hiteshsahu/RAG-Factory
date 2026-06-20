@@ -8,7 +8,7 @@ import CloseIcon from '@mui/icons-material/Close'
 import LinkIcon from '@mui/icons-material/Link'
 import DescriptionIcon from '@mui/icons-material/Description'
 import ArticleIcon from '@mui/icons-material/Article'
-import { formatBytes, type PipelineSettings } from '../data'
+import { formatBytes, STAGES, type PipelineSettings } from '../data'
 import { providerIcon } from './icons/ProviderIcons'
 
 interface Props {
@@ -71,7 +71,7 @@ export default function DropState({ onStart, settings, onOpenSettings }: Props) 
         {/* Hero */}
         <Box textAlign="center">
           <Typography variant="overline" color="primary">
-            Dr. Doofenshmirtz's greatest invention
+            {STAGES.map(s => s.name).join(' → ')}
           </Typography>
           <Typography variant="h4" sx={{ mt: 0.5, mb: 1 }}>
             The RAG-inator
