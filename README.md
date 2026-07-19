@@ -36,6 +36,10 @@ Pipeline runs through all stages and you can see the progress in the GUI.
 Once all stages are run you can chat with the RAGINATOR and get answers from your data source.
 ![chat](./img/screen-shots/chat.png)
 
+Also supported in Dark mode
+![chat](./img/screen-shots/chat-dark.png)
+
+
 ## See also
 - [Model Gym](https://github.com/HiteshSahu/Model-Gym) — 
   optimize and benchmark the model that powers your RAG pipeline
