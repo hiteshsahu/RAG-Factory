@@ -64,14 +64,20 @@ Open Interactive CLI
 
 ### ⚙️ Install dependencies
 ```bash
+
+# If you want clean install: rm -rf .venv          
 ./go install_tools        # create .venv, upgrade pip
-./go install              # editable-install raginator[dev] (every stage + pytest/ruff/mypy)
+
+ # install all stages dependencies + pytest/ruff/mypy)
+./go install             
+
+# or install a single stage dependency (e.g. chunk) for development:
 ./go install chunk        # editable-install just raginator[chunk]
 ```
 
-### ▶️ Run Pipeline
+### ▶️ Run GUI Pipeline
 
-Start React Frontend
+**Start React Frontend**
 ```bash
 ./go dev                  # Start UI
 ````
@@ -81,7 +87,10 @@ Start React Frontend
   ![Raginator](./img/raginator.png)
 
 
-Start Python Backend + RAG Pipeline
+**Start Python Backend + RAG Pipeline**
+
+In a new terminal start server with the RAG pipeline:
+
 ```bash
 ./go api                  # Start backend (RAG + Bridge)
 ```
