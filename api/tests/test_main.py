@@ -70,12 +70,12 @@ def test_unsupported_file_type_is_rejected(monkeypatch):
     response = client.post(
         "/api/pipeline/start",
         data={"settings": json.dumps({"embedProvider": "Mistral", "llmProvider": "Mistral"})},
-        files=[("files", ("doc.docx", b"binary junk", "application/msword"))],
+        files=[("files", ("doc.exe", b"binary junk", "application/octet-stream"))],
     )
 
     events = _sse_events(response.text)
     assert events[0]["type"] == "error"
-    assert ".docx" in events[0]["text"]
+    assert ".exe" in events[0]["text"]
 
 
 def test_root_lists_routes_and_docs_links():

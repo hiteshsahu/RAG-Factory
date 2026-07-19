@@ -14,15 +14,15 @@ from api.metrics import bridge_observer
 from api.schemas import EMBED_MODELS, CorpusStats, PipelineSettings
 from raginator.core import Chunk, Generator, RetrievedChunk
 from raginator.evaluate import KeywordOverlapEvaluator
-from raginator.ingest import PDFIngestor, TextFileIngestor
+from raginator.ingest import DocxIngestor, PDFIngestor, TextFileIngestor
 from raginator.pipeline import Pipeline
 from raginator.rerank import IdentityReranker
 from raginator.retrieve import DenseRetriever
 
-UNSUPPORTED_EXTENSIONS = {".docx"}
 # TextFileIngestor only globs *.txt -- markdown is text too, just saved under
 # the extension it'll actually be picked up under.
 TEXT_LIKE_EXTENSIONS = {".txt", ".md"}
+SUPPORTED_EXTENSIONS = TEXT_LIKE_EXTENSIONS | {".pdf", ".docx"}
 
 # Stages 4-7 (Retrieve/Rerank/Generate/Evaluate) don't run during indexing in
 # the real Pipeline -- Pipeline.index() only touches ingest/chunk/embed/store.
@@ -61,13 +61,13 @@ async def run_pipeline(
     progress event and so a failure can be attributed to the stage that broke.
     On success, stores the constructed Pipeline + CorpusStats into `state`.
     """
-    unsupported = [name for name, _ in files if Path(name).suffix.lower() in UNSUPPORTED_EXTENSIONS]
+    unsupported = [name for name, _ in files if Path(name).suffix.lower() not in SUPPORTED_EXTENSIONS]
     if unsupported:
         yield {
             "type": "error",
             "stage": -1,
             "text": f"Unsupported file type(s): {', '.join(unsupported)} "
-            "-- no ingest stage handles .docx yet. Use PDF, TXT, or MD.",
+            "-- use PDF, DOCX, TXT, or MD.",
         }
         return
 
@@ -92,6 +92,7 @@ async def run_pipeline(
             documents = [
                 *TextFileIngestor(tmp_dir).ingest(),
                 *PDFIngestor(tmp_dir).ingest(),
+                *DocxIngestor(tmp_dir).ingest(),
             ]
         except Exception as exc:
             yield {"type": "error", "stage": 0, "text": str(exc)}

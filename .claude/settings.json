@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 /private/tmp/claude-501/-Users-hitesh-Documents-WORK-RAG-Factory/66f88649-cd5d-4a7f-8a0e-40c71522a08a/scratchpad/add_headers.py)"
+    ]
+  }
+}

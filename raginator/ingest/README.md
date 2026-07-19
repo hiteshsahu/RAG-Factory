@@ -18,6 +18,7 @@ class Ingestor(ABC):
 |-------|--------|-------|
 | `TextFileIngestor(source_dir)` | local `.txt` files | toy default, no deps beyond `core` |
 | `PDFIngestor(source_dir)` | local `.pdf` files | extracts text via `pypdf` |
+| `DocxIngestor(source_dir)` | local `.docx` files | extracts paragraph text via `python-docx` |
 | `WebIngestor(urls, timeout=10.0)` | HTTP(S) pages | `requests` + `beautifulsoup4`, strips `<script>`/`<style>` |
 | `GitHubIngestor(owner, repo, ref="HEAD", token=None, timeout=10.0)` | a GitHub repo | walks the repo tree API, ingests Markdown/doc files only; `token` falls back to `Settings().github_token` |
 | `S3Ingestor(bucket, prefix="", client=None)` | an S3 bucket/prefix | `boto3`; pass `client=` to inject a fake/mock S3 client in tests |
@@ -40,7 +41,7 @@ RAGINATOR_GITHUB_TOKEN   # used by GitHubIngestor if token= isn't passed
 ## Install
 
 ```bash
-./go install ingest   # pypdf, requests, beautifulsoup4, boto3
+./go install ingest   # pypdf, python-docx, requests, beautifulsoup4, boto3
 ```
 
 ## Tests

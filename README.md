@@ -50,9 +50,14 @@ Once all stages are run you can chat with the RAGINATOR and get answers from you
 
 ### Stages
 
+Each stage is a self-contained Python package with its own dependencies, tests, and README. The pipeline orchestrates them in order, passing data from one stage to the next.
+
+It allows to use different implementations of each stage, e.g. you can swap out the embedding model or the vector store without touching the rest of the pipeline.
+Different teams can own different stages, and the pipeline can be run end-to-end or stage-by-stage.
+
 | Stage              | Path                   | GPU Required | Details |
 |--------------------|------------------------|--------------|---------|
-| **0 — Ingest 📚**    | `raginator/ingest/`    | No           | [README](raginator/ingest/README.md) — TextFile, PDF, Web, GitHub, S3 |
+| **0 — Ingest 📚**    | `raginator/ingest/`    | No           | [README](raginator/ingest/README.md) — TextFile, PDF, Docx, Web, GitHub, S3 |
 | **1 — Chunk 📑**     | `raginator/chunk/`     | No           | [README](raginator/chunk/README.md) — Fixed, Recursive, Semantic, Code |
 | **2 — Embed 🔢**     | `raginator/embed/`     | No           | [README](raginator/embed/README.md) — Hashing, Mistral, OpenAI, HuggingFace, Ollama |
 | **3 — Store ↗️**     | `raginator/store/`     | Optional     | [README](raginator/store/README.md) — InMemory (+native C++/CUDA), Chroma, pgvector, Pinecone |
@@ -83,8 +88,8 @@ Open Interactive CLI
  # install all stages dependencies + pytest/ruff/mypy)
 ./go install             
 
-# or install a single stage dependency (e.g. chunk) for development:
-./go install chunk        # editable-install just raginator[chunk]
+# or install a single stage dependency (e.g. ingest) for development:
+./go install ingest       
 ```
 
 ### ▶️ Run GUI Pipeline
