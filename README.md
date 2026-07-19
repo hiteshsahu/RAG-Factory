@@ -26,18 +26,18 @@
 ### 1. **Upload Documents**
 
 You start with uploading documents to the ingest stage and start the pipeline.
-![start-scren](./img/screen-shots/start-screen.png)
+![start-scren](./img/screen-shots/start-screen.jpg)
 
 ### 2. **Run Pipeline**
 Pipeline runs through all stages and you can see the progress in the GUI.
-![rag-pipleine](./img/screen-shots/stages.png)
+![rag-pipleine](./img/screen-shots/stages.jpg)
 
 ### 3. **Chat with paginator**
 Once all stages are run you can chat with the RAGINATOR and get answers from your data source.
-![chat](./img/screen-shots/chat.png)
+![chat](./img/screen-shots/chat.jpg)
 
 Also supported in Dark mode
-![chat](./img/screen-shots/chat-dark.png)
+![chat](./img/screen-shots/chat-dark.jpg)
 
 
 ## See also
@@ -105,7 +105,7 @@ Open Interactive CLI
 
 - GUI start at: [**http://localhost:5173/**](http://localhost:5173/)
 
-  ![Raginator](./img/screen-shots/start-screen.png)
+  ![Raginator](./img/screen-shots/start-screen.jpg)
 
 
 **Start Python Backend + RAG Pipeline**
@@ -118,7 +118,7 @@ In a new terminal start server with the RAG pipeline:
 -  Backend start at: [**http://127.0.0.1:8001/**](http://127.0.0.1:8001/)
 -  API Documentation [http://127.0.0.1:8001/docs](http://127.0.0.1:8001/docs)
 
-  ![API](./img/screen-shots/api.png)
+  ![API](./img/screen-shots/api.jpg)
 
 The pipeline runs end-to-end with pure-Python/numpy defaults (no GPU, no
 model downloads). 
@@ -157,7 +157,7 @@ Grafana auto-provisions the Prometheus datasource and loads `raginator/observe/d
 Run `./go metrics_server` alongside it in another shell so
 the panels have live data to show instead of "No data".
 
-  ![Dashboard](./img/screen-shots/grafana.png)
+  ![Dashboard](./img/screen-shots/grafana.jpg)
 
 ### 🔎 Test 
 
