@@ -50,6 +50,7 @@ Commands:
 === 4. 🧹 CLEANUP                ===
 === 5. 📈 OBSERVABILITY          ===
 === 6. 🌉 BRIDGE                 ===
+=== 7. 🖼 ASSETS                 ===
 
 Enter a number to see details:
 HEREDOC
@@ -99,6 +100,11 @@ case ${option} in
   6)
     echo "=== 🌉 BRIDGE ==="
     echo "🌉  api               -- Run the FastAPI bridge (uvicorn) on :8001 for the frontend"
+    ;;
+
+  7)
+    echo "=== 🖼 ASSETS ==="
+    echo "🖼  optimize_images <folder> [-q Q] [-r] [--delete-originals]  -- shrink jpg/png to jpg"
     ;;
   *)
     echo "Section $option does not exist"
@@ -276,6 +282,23 @@ function api() {
   # and the wrapper pre-imports raginator before that happens.
   log "🌉 Starting the FastAPI bridge on :8001 (Ctrl-C to stop)..."
   "$PY" scripts/serve_api.py
+}
+
+# ---------------------------------------------------------------------------------------
+#  7)                === 🖼 ASSETS ===
+# ---------------------------------------------------------------------------------------
+function optimize_images() {
+  # No default folder -- unlike `test`/`typecheck`, guessing "the whole img/
+  # tree, recursively" would be actively wrong here: re-running it would
+  # convert img/infographics/*.jpeg into a *duplicate* same-content .jpg
+  # (different extension, so the script's own already-converted check
+  # doesn't catch it). Pass the folder explicitly, e.g. `img/screen-shots`.
+  if [ $# -eq 0 ]; then
+    log "❌ Usage: ./go optimize_images <folder> [-q QUALITY] [-r] [--delete-originals]"
+    return 1
+  fi
+  log "🖼 Optimizing images..."
+  ./scripts/optimize-images.sh "$@"
 }
 
 # -----------------------------

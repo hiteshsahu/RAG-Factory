@@ -183,6 +183,7 @@ the panels have live data to show instead of "No data".
 ./go clean                # remove .venv, native/build, caches
 ```
 
+
 Equivalently, the same selection is available as plain pip extras:
 
 ```bash
@@ -257,6 +258,21 @@ gating that stage's third-party deps (e.g. `embed`/`store` need numpy) — all
 the code always ships together, organized by folder for readability and so a
 team can own a stage's `raginator/<stage>/` folder day to day.
 
+---
+
+### 🖼 Assets
+
+```bash
+./go optimize_images img/screen-shots           # convert jpg/png to jpg
+./go optimize_images img/screen-shots -q 90 -r --delete-originals
+```
+
+Thin wrapper around `scripts/optimize-images.sh` (ImageMagick, so `-q` is
+JPEG quality). No default folder -- convert the whole `img/` tree recursively
+and it'll happily produce a duplicate `.jpg` next to every existing `.jpeg`
+in `img/infographics/`, since same-content-different-extension isn't
+"already converted" as far as the script can tell. Point it at a specific
+folder instead.
 
 ---
 
