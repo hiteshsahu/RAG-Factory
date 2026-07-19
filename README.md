@@ -1,23 +1,19 @@
 # RAG FACTORY 🦆
 > Transforms chaotic PDFs, docs, websites, and APIs into trusted answers using embeddings, retrieval, reranking, and LLMs.
 
-
-![](./img/duck-logo.png)
-
 ### Powered by the **Raginator-3000**
 
-```python
-            ┌─────────────────────────────────────┐
-            │  RAGINATOR — TRI-STATE RAG MACHINE  │
-            │  Patent Pending — Doofenshmirtz Inc │
-            └─────────────────────────────────────┘
 
-            "Behold! The RAGINATOR!"
-             Point it at ANY data source and it shall RAG-ify everything in the tri-state area!
-                                                                    — Dr. Doofenshmirtz, probably
-```
-
-![Raginator-3000](./img/cover.png)
+>
+>            ┌─────────────────────────────────────┐
+>            │  RAGINATOR — TRI-STATE RAG MACHINE  │
+>            │  Patent Pending — Doofenshmirtz Inc │
+>            └─────────────────────────────────────┘
+>
+>            "Behold! The RAGINATOR!"
+>             Point it at ANY data source and it shall RAG-ify everything in the tri-state area!
+>                                                                    — Dr. Doofenshmirtz, probably
+> ![Raginator-3000](./img/infographics/cover.png)
 
 ![Python](https://img.shields.io/badge/Python-3.12+-blue)
 ![CUDA](https://img.shields.io/badge/CUDA-Enabled-76B900)
@@ -25,16 +21,32 @@
 ![C++17](https://img.shields.io/badge/C++-17-blue)
 ![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)
 
+### How it works
+
+### 1. **Upload Documents**
+
+You start with uploading documents to the ingest stage and start the pipeline.
+![start-scren](./img/screen-shots/start-screen.png)
+
+### 2. **Run Pipeline**
+Pipeline runs through all stages and you can see the progress in the GUI.
+![rag-pipleine](./img/screen-shots/stages.png)
+
+### 3. **Chat with paginator**
+Once all stages are run you can chat with the RAGINATOR and get answers from your data source.
+![chat](./img/screen-shots/chat.png)
 
 ## See also
 - [Model Gym](https://github.com/HiteshSahu/Model-Gym) — 
   optimize and benchmark the model that powers your RAG pipeline
 - Raginator — build the pipeline around it
 
+
+----
+
 ## RAGINATOR PIPELINE
 
-![](./img/stages.png)
-
+![](./img/infographics/stages.png)
 
 ### Stages
 
@@ -54,9 +66,9 @@
 
 ---
 
----
-
 ## 📟 `./go` CLI
+
+<img src="./img/infographics/duck-logo.png" alt="drawing" width="200"/>
 
 Open Interactive CLI
 > ./go                     
@@ -84,7 +96,7 @@ Open Interactive CLI
 
 - GUI start at: [**http://localhost:5173/**](http://localhost:5173/)
 
-  ![Raginator](./img/raginator.png)
+  ![Raginator](./img/screen-shots/start-screen.png)
 
 
 **Start Python Backend + RAG Pipeline**
@@ -97,7 +109,7 @@ In a new terminal start server with the RAG pipeline:
 -  Backend start at: [**http://127.0.0.1:8001/**](http://127.0.0.1:8001/)
 -  API Documentation [http://127.0.0.1:8001/docs](http://127.0.0.1:8001/docs)
 
-  ![API](./img/api.png)
+  ![API](./img/screen-shots/api.png)
 
 The pipeline runs end-to-end with pure-Python/numpy defaults (no GPU, no
 model downloads). 
@@ -136,7 +148,7 @@ Grafana auto-provisions the Prometheus datasource and loads `raginator/observe/d
 Run `./go metrics_server` alongside it in another shell so
 the panels have live data to show instead of "No data".
 
-  ![Dashboard](./img/grafana.png)
+  ![Dashboard](./img/screen-shots/grafana.png)
 
 ### 🔎 Test 
 

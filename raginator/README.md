@@ -2,9 +2,9 @@
 
 
 
-![](../img/illustration.jpeg)
+![](../img/infographics/illustration.jpeg)
 
 
 ## Pipeline 
 
-![](../img/pipeline.jpeg)
+![](../img/infographics/pipeline.jpeg)
