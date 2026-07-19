@@ -1,3 +1,6 @@
+// Copyright 2026 Hitesh Kumar Sahu — https://hiteshsahu.com
+// SPDX-License-Identifier: Apache-2.0
+
 import { useEffect, useState } from 'react'
 
 export function useLocalStorage<T>(key: string, initialValue: T) {

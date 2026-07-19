@@ -1,3 +1,6 @@
+# Copyright 2026 Hitesh Kumar Sahu — https://hiteshsahu.com
+# SPDX-License-Identifier: Apache-2.0
+
 import numpy as np
 from raginator.core import Chunk
 from raginator.embed import HashingEmbedder

@@ -1,3 +1,6 @@
+// Copyright 2026 Hitesh Kumar Sahu — https://hiteshsahu.com
+// SPDX-License-Identifier: Apache-2.0
+
 import Box from '@mui/material/Box'
 import type { BoxProps } from '@mui/material/Box'
 import mistralColorSvg from '@lobehub/icons-static-svg/icons/mistral-color.svg?raw'

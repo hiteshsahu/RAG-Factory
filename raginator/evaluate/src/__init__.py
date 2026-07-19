@@ -1,3 +1,6 @@
+# Copyright 2026 Hitesh Kumar Sahu — https://hiteshsahu.com
+# SPDX-License-Identifier: Apache-2.0
+
 from .cost import PRICING_PER_MILLION_TOKENS, cost_per_million_tokens, cost_per_query
 from .evaluator import KeywordOverlapEvaluator
 from .generation import (

@@ -1,3 +1,6 @@
+// Copyright 2026 Hitesh Kumar Sahu — https://hiteshsahu.com
+// SPDX-License-Identifier: Apache-2.0
+
 import React, { useEffect, useRef, useState } from 'react'
 import {
   Box, Button, Card, Chip, CircularProgress,

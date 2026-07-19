@@ -1,3 +1,6 @@
+// Copyright 2026 Hitesh Kumar Sahu — https://hiteshsahu.com
+// SPDX-License-Identifier: Apache-2.0
+
 import { createTheme } from '@mui/material/styles'
 import type { PaletteMode } from '@mui/material'
 

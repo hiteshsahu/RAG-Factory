@@ -1,3 +1,6 @@
+# Copyright 2026 Hitesh Kumar Sahu — https://hiteshsahu.com
+# SPDX-License-Identifier: Apache-2.0
+
 """Launches the FastAPI bridge (api/main.py) via uvicorn.
 
 Run as a plain script (`python scripts/serve_api.py`), never `python -m

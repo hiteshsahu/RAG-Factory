@@ -1,3 +1,6 @@
+// Copyright 2026 Hitesh Kumar Sahu — https://hiteshsahu.com
+// SPDX-License-Identifier: Apache-2.0
+
 import type { CorpusStats, PipelineSettings, SourceChunk } from './data'
 
 // The bridge (api/main.py) runs on :8001 -- :8000 is metrics_server.py's

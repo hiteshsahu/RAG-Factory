@@ -1,3 +1,6 @@
+// Copyright 2026 Hitesh Kumar Sahu — https://hiteshsahu.com
+// SPDX-License-Identifier: Apache-2.0
+
 import React, { useEffect, useRef } from 'react'
 import {
   Alert, AlertTitle, Box, Button, Card, CircularProgress, Container,

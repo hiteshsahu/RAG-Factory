@@ -1,3 +1,6 @@
+# Copyright 2026 Hitesh Kumar Sahu — https://hiteshsahu.com
+# SPDX-License-Identifier: Apache-2.0
+
 """Runs the toy pipeline on a loop, exposing live metrics on :8000/metrics
 for Prometheus to scrape -- see docker-compose.yml and `./go observe`."""
 

@@ -1,3 +1,6 @@
+# Copyright 2026 Hitesh Kumar Sahu — https://hiteshsahu.com
+# SPDX-License-Identifier: Apache-2.0
+
 import pytest
 from raginator.core import GeneratedAnswer, StageError
 from raginator.evaluate import cost_per_million_tokens, cost_per_query

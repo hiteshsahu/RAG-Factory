@@ -1,3 +1,6 @@
+# Copyright 2026 Hitesh Kumar Sahu — https://hiteshsahu.com
+# SPDX-License-Identifier: Apache-2.0
+
 from raginator.core import Chunk, RetrievedChunk
 from raginator.evaluate import mean_reciprocal_rank, precision_at_k, recall_at_k, retrieval_metrics
 
