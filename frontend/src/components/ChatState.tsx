@@ -14,8 +14,47 @@ import CheckIcon from '@mui/icons-material/Check'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import CloseIcon from '@mui/icons-material/Close'
 import HistoryIcon from '@mui/icons-material/History'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { DEMO_QA, EMBED_MODELS, formatBytes, type CorpusStats, type Message, type Provider, type SourceChunk } from '../data'
 import { providerIcon } from './icons/ProviderIcons'
+
+// Chat answers are LLM output -- often markdown (lists, **bold**, `code`,
+// paragraph breaks) that used to get flattened into one dense, unformatted
+// blob because Typography rendered it as a literal string. These selectors
+// style the actual HTML react-markdown produces, so they work regardless of
+// which markdown constructs a given answer happens to use.
+const markdownSx = (color: string) => ({
+  color,
+  fontSize: '0.875rem',
+  lineHeight: 1.7,
+  '& > *:first-of-type': { mt: 0 },
+  '& > *:last-child': { mb: 0 },
+  '& p': { m: 0, '&:not(:last-child)': { mb: 1 } },
+  '& ul, & ol': { m: 0, mb: 1, pl: 2.5 },
+  '& li': { mb: 0.25 },
+  '& li > p': { display: 'inline', m: 0 },
+  '& a': { color: 'inherit' },
+  '& strong': { fontWeight: 700 },
+  '& blockquote': {
+    m: 0, mb: 1, pl: 1.5, borderLeft: '3px solid rgba(127,119,221,0.4)', opacity: 0.85,
+  },
+  '& pre': {
+    fontFamily: '"JetBrains Mono",monospace', fontSize: '0.78rem',
+    bgcolor: 'rgba(0,0,0,0.25)', p: 1.5, mb: 1, borderRadius: 1, overflowX: 'auto',
+  },
+  '& pre code': { fontFamily: 'inherit', background: 'none', padding: 0 },
+  '& :not(pre) > code': {
+    fontFamily: '"JetBrains Mono",monospace', fontSize: '0.82em',
+    bgcolor: 'rgba(127,119,221,0.15)', px: 0.6, py: 0.15, borderRadius: 0.5,
+  },
+})
+
+const MessageText = ({ text, color }: { text: string; color: string }) => (
+  <Typography component="div" variant="body2" sx={markdownSx(color)}>
+    <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
+  </Typography>
+)
 
 interface Props {
   corpusName: string
@@ -189,9 +228,7 @@ export default function ChatState({
                 '&:hover .copy-btn': { opacity: 1 },
               }}
             >
-              <Typography variant="body2" sx={{ color: m.role === 'user' ? '#fff' : 'text.primary', lineHeight: 1.7 }}>
-                {m.text}
-              </Typography>
+              <MessageText text={m.text} color={m.role === 'user' ? '#fff' : 'text.primary'} />
 
               {m.role === 'bot' && (
                 <Tooltip title={copiedIndex === i ? 'Copied!' : 'Copy answer'}>

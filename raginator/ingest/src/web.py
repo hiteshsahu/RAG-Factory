@@ -9,6 +9,12 @@ import requests
 from bs4 import BeautifulSoup
 from raginator.core import Ingestor, RawDocument
 
+# Wikipedia (and several other sites) reject requests.get's default
+# "python-requests/X.Y" user agent outright (403) as an anti-scraping
+# measure -- a descriptive UA identifying the bot + a contact URL is what
+# Wikipedia's own User-Agent policy asks for, and it satisfies everyone else too.
+USER_AGENT = "RaginatorWebIngestor/1.0 (+https://github.com/HiteshSahu/RAG-Factory)"
+
 
 class WebIngestor(Ingestor):
     """Fetches each URL and extracts visible text from its HTML (The Suck-Inator)."""
@@ -19,7 +25,7 @@ class WebIngestor(Ingestor):
 
     def ingest(self) -> Iterable[RawDocument]:
         for url in self._urls:
-            response = requests.get(url, timeout=self._timeout)
+            response = requests.get(url, timeout=self._timeout, headers={"User-Agent": USER_AGENT})
             response.raise_for_status()
             soup = BeautifulSoup(response.text, "html.parser")
             for tag in soup(["script", "style"]):

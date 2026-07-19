@@ -48,7 +48,6 @@ export default function DropState({ onStart, settings, onOpenSettings }: Props) 
   const [files, setFiles] = useState<File[]>([])
   const [url, setUrl]     = useState('')
   const [urls, setUrls]   = useState<string[]>([])
-  const [textOpen, setTextOpen] = useState(false)
   const [text, setText]   = useState('')
   const [texts, setTexts] = useState<string[]>([])
   const [dragging, setDragging] = useState(false)
@@ -137,40 +136,42 @@ export default function DropState({ onStart, settings, onOpenSettings }: Props) 
         <Stack direction="row" spacing={1} width="100%">
           <TextField
             fullWidth size="small"
-            placeholder="https://docs.mistral.ai  or  github.com/owner/repo"
+            placeholder="https://example.com  or  github.com/owner/repo"
             value={url}
             onChange={e => setUrl(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && addUrl()}
           />
-          <Button variant="outlined" onClick={addUrl} sx={{ whiteSpace: 'nowrap' }}>
-            Add URL
-          </Button>
           <Button
-            variant={textOpen ? 'contained' : 'outlined'}
-            color="secondary"
-            onClick={() => setTextOpen(o => !o)}
-            startIcon={<NotesIcon sx={{ fontSize: 18 }} />}
+            variant="contained"
+            color="primary"
+            onClick={addUrl}
+            startIcon={<LinkIcon sx={{ fontSize: 18 }} />}
             sx={{ whiteSpace: 'nowrap' }}
           >
-            Paste text
+            Add URL
           </Button>
         </Stack>
 
-        {/* Pasted-text input -- collapsed by default (textarea real estate
-            isn't worth spending unless someone's actually using it). */}
-        {textOpen && (
-          <Stack spacing={1} width="100%">
-            <TextField
-              fullWidth multiline minRows={4} maxRows={10}
-              placeholder="Paste or type text..."
-              value={text}
-              onChange={e => setText(e.target.value)}
-            />
-            <Button variant="outlined" onClick={addText} sx={{ alignSelf: 'flex-end' }}>
-              Add Text
-            </Button>
-          </Stack>
-        )}
+        {/* Pasted-text input -- always visible, unlike the URL field's
+            one-off "Add URL" pairing, since a block of text takes more than
+            one line to review before adding it. */}
+        <Stack spacing={1} width="100%">
+          <TextField
+            fullWidth multiline minRows={4} maxRows={10}
+            placeholder="Paste or type text..."
+            value={text}
+            onChange={e => setText(e.target.value)}
+          />
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={addText}
+            startIcon={<NotesIcon sx={{ fontSize: 18 }} />}
+            sx={{ alignSelf: 'flex-end' }}
+          >
+            Add Text
+          </Button>
+        </Stack>
 
         {/* File list */}
         {(files.length > 0 || urls.length > 0 || texts.length > 0) && (
