@@ -90,11 +90,13 @@ export default function DropState({ onStart, settings, onOpenSettings }: Props) 
 
         {/* Hero */}
         <Box textAlign="center">
-          <Typography variant="overline" color="primary">
-            {STAGES.map(s => s.name).join(' → ')}
-          </Typography>
+     
           <Typography variant="h4" sx={{ mt: 0.5, mb: 1 }}>
             The RAG-inator
+          </Typography>
+          
+          <Typography variant="overline" color="primary">
+            {STAGES.map(s => s.name).join(' → ')}
           </Typography>
           <Typography color="text.secondary">
             Drop files, paste a URL, or paste text. It shall RAG-ify everything.
