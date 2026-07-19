@@ -149,19 +149,13 @@ export default function App() {
     setSuggestedQuestions([])
     setPipelineDone(false)
 
-    if (files.length === 0) {
-      // The bridge only ingests real files -- WebIngestor/GitHubIngestor
-      // aren't wired in yet, so a URL-only run can't actually be honored.
-      setCorpusName(urls[0] ? new URL(urls[0]).hostname : 'corpus')
-      addLog("URL ingestion isn't wired into the bridge yet -- drop a file instead (PDF, TXT, or MD).", 'error')
-      setFailedStage(PREFLIGHT_STAGE)
-      return
-    }
-    const name = files[0].name.replace(/\.[^.]+$/, '')
+    const name = files[0]
+      ? files[0].name.replace(/\.[^.]+$/, '')
+      : new URL(urls[0]).hostname
     setCorpusName(name)
 
     try {
-      for await (const event of streamPipelineStart(files, settings)) {
+      for await (const event of streamPipelineStart(files, urls, settings)) {
         if (cancelRef.current) return
 
         switch (event.type) {

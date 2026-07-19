@@ -163,3 +163,32 @@ def test_full_pipeline_run_then_query(monkeypatch, tmp_path):
     metrics_response = client.get("/metrics")
     assert metrics_response.status_code == 200
     assert b"raginator_index_requests_total" in metrics_response.content
+
+
+def test_full_pipeline_run_from_url_only(monkeypatch):
+    monkeypatch.setenv("RAGINATOR_MISTRAL_API_KEY", "test-key")
+    _STATE["pipeline"] = None
+    _STATE["corpus_stats"] = None
+
+    settings = {
+        "embedProvider": "Mistral",
+        "vectorStore": "ChromaDB",
+        "llmProvider": "Mistral",
+        "chunkStrategy": "Fixed",
+    }
+
+    web_response = Mock(text=f"<p>{'Behold the RAGINATOR! ' * 50}</p>", status_code=200)
+    web_response.raise_for_status = Mock()
+
+    with (
+        patch("requests.post", side_effect=_mistral_post_router("unused")),
+        patch("raginator.ingest.web.requests.get", return_value=web_response),
+    ):
+        response = client.post(
+            "/api/pipeline/start",
+            data={"settings": json.dumps(settings), "urls": ["https://example.com"]},
+        )
+
+    events = _sse_events(response.text)
+    assert events[-1]["type"] == "complete", events
+    assert events[-1]["corpusStats"]["docs"] == 1

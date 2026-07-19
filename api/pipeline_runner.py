@@ -8,13 +8,20 @@ import tempfile
 from collections.abc import AsyncIterator
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 from api import providers
 from api.metrics import bridge_observer
 from api.schemas import EMBED_MODELS, CorpusStats, PipelineSettings
-from raginator.core import Chunk, Generator, RetrievedChunk
+from raginator.core import Chunk, Generator, RawDocument, RetrievedChunk
 from raginator.evaluate import KeywordOverlapEvaluator
-from raginator.ingest import DocxIngestor, PDFIngestor, TextFileIngestor
+from raginator.ingest import (
+    DocxIngestor,
+    GitHubIngestor,
+    PDFIngestor,
+    TextFileIngestor,
+    WebIngestor,
+)
 from raginator.pipeline import Pipeline
 from raginator.rerank import IdentityReranker
 from raginator.retrieve import DenseRetriever
@@ -23,6 +30,27 @@ from raginator.retrieve import DenseRetriever
 # the extension it'll actually be picked up under.
 TEXT_LIKE_EXTENSIONS = {".txt", ".md"}
 SUPPORTED_EXTENSIONS = TEXT_LIKE_EXTENSIONS | {".pdf", ".docx"}
+
+
+def _github_owner_repo(url: str) -> tuple[str, str]:
+    parts = [p for p in urlparse(url).path.split("/") if p]
+    if len(parts) < 2:
+        raise ValueError(f"GitHub URL must include an owner and repo, e.g. github.com/owner/repo: {url}")
+    return parts[0], parts[1]
+
+
+def _ingest_urls(urls: list[str]) -> list[RawDocument]:
+    """Dispatches each URL by hostname -- github.com URLs walk the repo's
+    Markdown files via GitHubIngestor, everything else is fetched as a plain
+    web page via WebIngestor."""
+    github_urls = [u for u in urls if urlparse(u).hostname == "github.com"]
+    web_urls = [u for u in urls if urlparse(u).hostname != "github.com"]
+
+    documents = list(WebIngestor(web_urls).ingest()) if web_urls else []
+    for url in github_urls:
+        owner, repo = _github_owner_repo(url)
+        documents.extend(GitHubIngestor(owner, repo).ingest())
+    return documents
 
 # Stages 4-7 (Retrieve/Rerank/Generate/Evaluate) don't run during indexing in
 # the real Pipeline -- Pipeline.index() only touches ingest/chunk/embed/store.
@@ -53,6 +81,7 @@ def _suggest_questions(generator: Generator, chunks: list[Chunk]) -> list[str]:
 
 async def run_pipeline(
     files: list[tuple[str, bytes]],
+    urls: list[str],
     settings: PipelineSettings,
     state: dict[str, Any],
 ) -> AsyncIterator[dict[str, Any]]:
@@ -93,12 +122,13 @@ async def run_pipeline(
                 *TextFileIngestor(tmp_dir).ingest(),
                 *PDFIngestor(tmp_dir).ingest(),
                 *DocxIngestor(tmp_dir).ingest(),
+                *_ingest_urls(urls),
             ]
         except Exception as exc:
             yield {"type": "error", "stage": 0, "text": str(exc)}
             return
         if not documents:
-            yield {"type": "error", "stage": 0, "text": "No ingestable documents found in the upload"}
+            yield {"type": "error", "stage": 0, "text": "No ingestable documents found in the provided files/URLs"}
             return
         yield {"type": "log", "stage": 0, "text": f"Loaded {len(documents)} document(s)", "kind": "default"}
         yield {"type": "stage_done", "stage": 0, "stat": f"{len(documents)} docs"}

@@ -18,15 +18,18 @@ export interface PipelineEvent {
   suggestedQuestions?: string[]
 }
 
-/** POSTs the dropped files + settings to /api/pipeline/start and yields each
- * SSE event as it streams in. Can't use the browser's native EventSource
- * here -- it only supports GET, and this needs to POST the files. */
+/** POSTs the dropped files/URLs + settings to /api/pipeline/start and yields
+ * each SSE event as it streams in. Can't use the browser's native
+ * EventSource here -- it only supports GET, and this needs to POST the
+ * files. */
 export async function* streamPipelineStart(
   files: File[],
+  urls: string[],
   settings: PipelineSettings,
 ): AsyncGenerator<PipelineEvent> {
   const formData = new FormData()
   for (const file of files) formData.append('files', file)
+  for (const url of urls) formData.append('urls', url)
   formData.append('settings', JSON.stringify(settings))
 
   const response = await fetch(`${API_BASE}/api/pipeline/start`, { method: 'POST', body: formData })

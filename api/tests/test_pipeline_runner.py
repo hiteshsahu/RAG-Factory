@@ -1,7 +1,10 @@
 # Copyright 2026 Hitesh Kumar Sahu — https://hiteshsahu.com
 # SPDX-License-Identifier: Apache-2.0
 
-from api.pipeline_runner import _suggest_questions
+from unittest.mock import Mock, patch
+
+import pytest
+from api.pipeline_runner import _github_owner_repo, _ingest_urls, _suggest_questions
 from raginator.core import Chunk, GeneratedAnswer, Generator, RetrievedChunk
 
 
@@ -37,3 +40,35 @@ def test_samples_at_most_six_chunks_as_context():
     _suggest_questions(generator, chunks)
     assert generator.last_context is not None
     assert len(generator.last_context) == 6
+
+
+def test_github_owner_repo_parses_path():
+    assert _github_owner_repo("https://github.com/HiteshSahu/RAG-Factory") == ("HiteshSahu", "RAG-Factory")
+
+
+def test_github_owner_repo_rejects_bare_url():
+    with pytest.raises(ValueError, match="owner/repo"):
+        _github_owner_repo("https://github.com/HiteshSahu")
+
+
+def test_ingest_urls_dispatches_by_hostname():
+    web_response = Mock(text="<p>Hello Web</p>", status_code=200)
+    web_response.raise_for_status = Mock()
+
+    github_tree = Mock(status_code=200)
+    github_tree.raise_for_status = Mock()
+    github_tree.json.return_value = {
+        "tree": [{"path": "README.md", "type": "blob", "url": "https://api.github.com/blob/1"}]
+    }
+    github_blob = Mock(status_code=200)
+    github_blob.raise_for_status = Mock()
+    github_blob.json.return_value = {"content": "SGVsbG8gUkVBRE1F"}  # base64 "Hello README"
+
+    # web.py and github.py both `import requests` -- the same module object --
+    # so patching each module's `.requests.get` attribute separately clobbers
+    # whichever was patched first. One patch on the shared `requests.get`,
+    # ordered to match the call sequence (web fetch, then repo tree, then blob).
+    with patch("requests.get", side_effect=[web_response, github_tree, github_blob]):
+        documents = _ingest_urls(["https://example.com", "https://github.com/owner/repo"])
+
+    assert {d.source_id for d in documents} == {"https://example.com", "owner/repo/README.md"}
