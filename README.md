@@ -13,7 +13,7 @@
 >            "Behold! The RAGINATOR!"
 >             Point it at ANY data source and it shall RAG-ify everything in the tri-state area!
 >                                                                    — Dr. Doofenshmirtz, probably
-> ![Raginator-3000](./img/infographics/cover.png)
+> ![Raginator-3000](./img/infographics/cover.jpg)
 
 ![Python](https://img.shields.io/badge/Python-3.12+-blue)
 ![CUDA](https://img.shields.io/badge/CUDA-Enabled-76B900)
@@ -46,7 +46,7 @@ Once all stages are run you can chat with the RAGINATOR and get answers from you
 
 ## RAGINATOR PIPELINE
 
-![](./img/infographics/stages.png)
+![](./img/infographics/stages.jpg)
 
 ### Stages
 
@@ -68,7 +68,7 @@ Once all stages are run you can chat with the RAGINATOR and get answers from you
 
 ## 📟 `./go` CLI
 
-<img src="./img/infographics/duck-logo.png" alt="drawing" width="200"/>
+<img src="./img/infographics/duck-logo.webp" alt="drawing" width="200"/>
 
 Open Interactive CLI
 > ./go                     
