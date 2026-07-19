@@ -4,7 +4,12 @@
 from unittest.mock import Mock, patch
 
 import pytest
-from api.pipeline_runner import _github_owner_repo, _ingest_urls, _suggest_questions
+from api.pipeline_runner import (
+    _github_owner_repo,
+    _ingest_pasted_text,
+    _ingest_urls,
+    _suggest_questions,
+)
 from raginator.core import Chunk, GeneratedAnswer, Generator, RetrievedChunk
 
 
@@ -72,3 +77,11 @@ def test_ingest_urls_dispatches_by_hostname():
         documents = _ingest_urls(["https://example.com", "https://github.com/owner/repo"])
 
     assert {d.source_id for d in documents} == {"https://example.com", "owner/repo/README.md"}
+
+
+def test_ingest_pasted_text_assigns_stable_source_ids():
+    documents = _ingest_pasted_text(["Hello RAGINATOR", "Second blob"])
+
+    assert [d.content for d in documents] == ["Hello RAGINATOR", "Second blob"]
+    assert [d.source_id for d in documents] == ["pasted-1", "pasted-2"]
+    assert all(d.metadata["source"] == "pasted" for d in documents)

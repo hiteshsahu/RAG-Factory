@@ -12,11 +12,12 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import HistoryIcon from '@mui/icons-material/History'
 import LinkIcon from '@mui/icons-material/Link'
 import ManageSearchIcon from '@mui/icons-material/ManageSearch'
+import NotesIcon from '@mui/icons-material/Notes'
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf'
 import type { CorpusStats, Message } from '../data'
 import PersistentSidebar from './PersistentSidebar'
 
-export type SourceType = 'pdf' | 'doc' | 'url'
+export type SourceType = 'pdf' | 'doc' | 'url' | 'text'
 
 export interface HistoryQuery {
   id: number
@@ -56,6 +57,7 @@ const SOURCE_ICON: Record<SourceType, { icon: React.ElementType; color: string }
   pdf: { icon: PictureAsPdfIcon, color: '#4C8DFF' },
   doc: { icon: DescriptionIcon, color: '#1D9E75' },
   url: { icon: LinkIcon, color: '#E2A53A' },
+  text: { icon: NotesIcon, color: '#B15FE0' },
 }
 
 const relativeTime = (ts: number) => {

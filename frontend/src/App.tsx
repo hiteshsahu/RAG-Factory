@@ -24,9 +24,10 @@ type AppState = 'drop' | 'process' | 'chat'
 
 interface LogLine { text: string; kind: 'default' | 'success' | 'error' }
 
-const sourceTypeOf = (files: File[], urls: string[]): SourceType => {
+const sourceTypeOf = (files: File[], urls: string[], texts: string[]): SourceType => {
   if (files.length > 0) return files[0].name.toLowerCase().endsWith('.pdf') ? 'pdf' : 'doc'
-  return urls.length > 0 ? 'url' : 'doc'
+  if (urls.length > 0) return 'url'
+  return texts.length > 0 ? 'text' : 'doc'
 }
 
 // Re-uploading the same document (same derived name) should refresh its
@@ -110,7 +111,7 @@ export default function App() {
   const [mode, setMode] = useState<PaletteMode>('dark')
   const theme = useMemo(() => getTheme(mode), [mode])
   const cancelRef = useRef(false)
-  const lastRunRef = useRef<{ files: File[]; urls: string[] }>({ files: [], urls: [] })
+  const lastRunRef = useRef<{ files: File[]; urls: string[]; texts: string[] }>({ files: [], urls: [], texts: [] })
   // Resume id numbering above whatever was already persisted, so restored
   // entries from a previous session can't collide with new ones.
   const queryIdRef = useRef(
@@ -135,9 +136,9 @@ export default function App() {
     setLogs(l => [...l, { text, kind }])
   }, [])
 
-  const runPipeline = useCallback(async (files: File[], urls: string[]) => {
+  const runPipeline = useCallback(async (files: File[], urls: string[], texts: string[]) => {
     cancelRef.current = false
-    lastRunRef.current = { files, urls }
+    lastRunRef.current = { files, urls, texts }
 
     setAppState('process')
     setStagesDone(0)
@@ -151,11 +152,11 @@ export default function App() {
 
     const name = files[0]
       ? files[0].name.replace(/\.[^.]+$/, '')
-      : new URL(urls[0]).hostname
+      : urls[0] ? new URL(urls[0]).hostname : 'Pasted text'
     setCorpusName(name)
 
     try {
-      for await (const event of streamPipelineStart(files, urls, settings)) {
+      for await (const event of streamPipelineStart(files, urls, texts, settings)) {
         if (cancelRef.current) return
 
         switch (event.type) {
@@ -200,7 +201,7 @@ export default function App() {
             setActiveCorpusId(corpusId)
             setActiveQueryId(null)
             setCorpusHistory(h => upsertCorpus(
-              h, corpusId, name, sourceTypeOf(files, urls),
+              h, corpusId, name, sourceTypeOf(files, urls, texts),
               event.corpusStats ?? FALLBACK_CORPUS_STATS, event.suggestedQuestions ?? [],
             ))
 
@@ -234,8 +235,8 @@ export default function App() {
   const continueToChat = useCallback(() => setAppState('chat'), [])
 
   const handleRetry = useCallback(() => {
-    const { files, urls } = lastRunRef.current
-    runPipeline(files, urls)
+    const { files, urls, texts } = lastRunRef.current
+    runPipeline(files, urls, texts)
   }, [runPipeline])
 
   const handleReset = () => {

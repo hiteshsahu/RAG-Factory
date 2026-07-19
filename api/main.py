@@ -83,10 +83,11 @@ async def metrics() -> Response:
 async def start_pipeline(
     files: list[UploadFile] | None = File(default=None),
     urls: list[str] | None = Form(default=None),
+    texts: list[str] | None = Form(default=None),
     settings: str = Form(...),
 ) -> StreamingResponse:
-    """Runs the real pipeline over the uploaded files + URLs and streams
-    progress as SSE events: {type: log|stage_done|error|complete, ...}.
+    """Runs the real pipeline over the uploaded files + URLs + pasted text and
+    streams progress as SSE events: {type: log|stage_done|error|complete, ...}.
     Multipart file upload + a streamed SSE response can't go through a plain
     EventSource (browsers only let EventSource issue GET) -- the frontend
     reads this with fetch() + a manual stream reader instead."""
@@ -102,7 +103,7 @@ async def start_pipeline(
     file_payload = [(f.filename or "upload", await f.read()) for f in files or []]
 
     async def event_stream() -> AsyncIterator[str]:
-        async for event in run_pipeline(file_payload, urls or [], parsed_settings, _STATE):
+        async for event in run_pipeline(file_payload, urls or [], texts or [], parsed_settings, _STATE):
             yield _sse(event)
             # run_pipeline's stages are blocking sync calls with no `await`
             # between yields, so the event loop never gets a turn to actually

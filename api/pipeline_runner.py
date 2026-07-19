@@ -52,6 +52,15 @@ def _ingest_urls(urls: list[str]) -> list[RawDocument]:
         documents.extend(GitHubIngestor(owner, repo).ingest())
     return documents
 
+
+def _ingest_pasted_text(texts: list[str]) -> list[RawDocument]:
+    """Pasted text is already the finished RawDocument content -- no file on
+    disk, no parsing, so it skips the Ingestor classes entirely."""
+    return [
+        RawDocument(content=text, metadata={"source": "pasted"}, source_id=f"pasted-{i}")
+        for i, text in enumerate(texts, start=1)
+    ]
+
 # Stages 4-7 (Retrieve/Rerank/Generate/Evaluate) don't run during indexing in
 # the real Pipeline -- Pipeline.index() only touches ingest/chunk/embed/store.
 # We still construct the real provider objects for them here (so a bad API
@@ -82,6 +91,7 @@ def _suggest_questions(generator: Generator, chunks: list[Chunk]) -> list[str]:
 async def run_pipeline(
     files: list[tuple[str, bytes]],
     urls: list[str],
+    texts: list[str],
     settings: PipelineSettings,
     state: dict[str, Any],
 ) -> AsyncIterator[dict[str, Any]]:
@@ -123,12 +133,13 @@ async def run_pipeline(
                 *PDFIngestor(tmp_dir).ingest(),
                 *DocxIngestor(tmp_dir).ingest(),
                 *_ingest_urls(urls),
+                *_ingest_pasted_text(texts),
             ]
         except Exception as exc:
             yield {"type": "error", "stage": 0, "text": str(exc)}
             return
         if not documents:
-            yield {"type": "error", "stage": 0, "text": "No ingestable documents found in the provided files/URLs"}
+            yield {"type": "error", "stage": 0, "text": "No ingestable documents found in the provided files/URLs/text"}
             return
         yield {"type": "log", "stage": 0, "text": f"Loaded {len(documents)} document(s)", "kind": "default"}
         yield {"type": "stage_done", "stage": 0, "stat": f"{len(documents)} docs"}

@@ -11,13 +11,21 @@ import CloseIcon from '@mui/icons-material/Close'
 import LinkIcon from '@mui/icons-material/Link'
 import DescriptionIcon from '@mui/icons-material/Description'
 import ArticleIcon from '@mui/icons-material/Article'
+import NotesIcon from '@mui/icons-material/Notes'
 import { formatBytes, STAGES, type PipelineSettings } from '../data'
 import { providerIcon } from './icons/ProviderIcons'
 
 interface Props {
-  onStart: (files: File[], urls: string[]) => void
+  onStart: (files: File[], urls: string[], texts: string[]) => void
   settings: PipelineSettings
   onOpenSettings: () => void
+}
+
+// Shown in the pasted-text list -- long blobs would otherwise blow out the
+// row width the way a filename/URL never does.
+const textPreview = (text: string, max = 80) => {
+  const oneLine = text.trim().replace(/\s+/g, ' ')
+  return oneLine.length > max ? `${oneLine.slice(0, max)}…` : oneLine
 }
 
 const fmtSize = formatBytes
@@ -40,6 +48,9 @@ export default function DropState({ onStart, settings, onOpenSettings }: Props) 
   const [files, setFiles] = useState<File[]>([])
   const [url, setUrl]     = useState('')
   const [urls, setUrls]   = useState<string[]>([])
+  const [textOpen, setTextOpen] = useState(false)
+  const [text, setText]   = useState('')
+  const [texts, setTexts] = useState<string[]>([])
   const [dragging, setDragging] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -56,6 +67,13 @@ export default function DropState({ onStart, settings, onOpenSettings }: Props) 
     setUrl('')
   }
 
+  const addText = () => {
+    const v = text.trim()
+    if (!v) return
+    setTexts(prev => [...prev, v])
+    setText('')
+  }
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
     setDragging(false)
@@ -63,8 +81,8 @@ export default function DropState({ onStart, settings, onOpenSettings }: Props) 
   }
 
   const handleStart = () => {
-    if (!files.length && !urls.length) return
-    onStart(files, urls)
+    if (!files.length && !urls.length && !texts.length) return
+    onStart(files, urls, texts)
   }
 
   return (
@@ -80,7 +98,7 @@ export default function DropState({ onStart, settings, onOpenSettings }: Props) 
             The RAG-inator
           </Typography>
           <Typography color="text.secondary">
-            Drop files or paste a URL. It shall RAG-ify everything.
+            Drop files, paste a URL, or paste text. It shall RAG-ify everything.
           </Typography>
         </Box>
 
@@ -127,10 +145,35 @@ export default function DropState({ onStart, settings, onOpenSettings }: Props) 
           <Button variant="outlined" onClick={addUrl} sx={{ whiteSpace: 'nowrap' }}>
             Add URL
           </Button>
+          <Button
+            variant={textOpen ? 'contained' : 'outlined'}
+            color="secondary"
+            onClick={() => setTextOpen(o => !o)}
+            startIcon={<NotesIcon sx={{ fontSize: 18 }} />}
+            sx={{ whiteSpace: 'nowrap' }}
+          >
+            Paste text
+          </Button>
         </Stack>
 
+        {/* Pasted-text input -- collapsed by default (textarea real estate
+            isn't worth spending unless someone's actually using it). */}
+        {textOpen && (
+          <Stack spacing={1} width="100%">
+            <TextField
+              fullWidth multiline minRows={4} maxRows={10}
+              placeholder="Paste or type text..."
+              value={text}
+              onChange={e => setText(e.target.value)}
+            />
+            <Button variant="outlined" onClick={addText} sx={{ alignSelf: 'flex-end' }}>
+              Add Text
+            </Button>
+          </Stack>
+        )}
+
         {/* File list */}
-        {(files.length > 0 || urls.length > 0) && (
+        {(files.length > 0 || urls.length > 0 || texts.length > 0) && (
           <Stack spacing={0.75} width="100%">
             {files.map((f, i) => (
               <Paper key={'f' + i} sx={{ px: 2, py: 1, display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -157,6 +200,17 @@ export default function DropState({ onStart, settings, onOpenSettings }: Props) 
                 </IconButton>
               </Paper>
             ))}
+            {texts.map((t, i) => (
+              <Paper key={'t' + i} sx={{ px: 2, py: 1, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <NotesIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                <Typography variant="body2" sx={{ flex: 1, fontFamily: '"JetBrains Mono",monospace', fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {textPreview(t)}
+                </Typography>
+                <IconButton size="small" onClick={() => setTexts(t => t.filter((_, j) => j !== i))}>
+                  <CloseIcon sx={{ fontSize: 16 }} />
+                </IconButton>
+              </Paper>
+            ))}
           </Stack>
         )}
 
@@ -178,7 +232,7 @@ export default function DropState({ onStart, settings, onOpenSettings }: Props) 
           variant="contained" color="primary" fullWidth size="large"
           endIcon={<span style={{ fontSize: 20 }}>›</span>}
           onClick={handleStart}
-          disabled={!files.length && !urls.length}
+          disabled={!files.length && !urls.length && !texts.length}
           sx={{
             py: 1.5, fontSize: '0.95rem',
             background: 'linear-gradient(135deg, #1D9E75 0%, #7F77DD 100%)',

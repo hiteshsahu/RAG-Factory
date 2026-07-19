@@ -192,3 +192,26 @@ def test_full_pipeline_run_from_url_only(monkeypatch):
     events = _sse_events(response.text)
     assert events[-1]["type"] == "complete", events
     assert events[-1]["corpusStats"]["docs"] == 1
+
+
+def test_full_pipeline_run_from_pasted_text_only(monkeypatch):
+    monkeypatch.setenv("RAGINATOR_MISTRAL_API_KEY", "test-key")
+    _STATE["pipeline"] = None
+    _STATE["corpus_stats"] = None
+
+    settings = {
+        "embedProvider": "Mistral",
+        "vectorStore": "ChromaDB",
+        "llmProvider": "Mistral",
+        "chunkStrategy": "Fixed",
+    }
+
+    with patch("requests.post", side_effect=_mistral_post_router("unused")):
+        response = client.post(
+            "/api/pipeline/start",
+            data={"settings": json.dumps(settings), "texts": ["Behold the RAGINATOR! " * 50]},
+        )
+
+    events = _sse_events(response.text)
+    assert events[-1]["type"] == "complete", events
+    assert events[-1]["corpusStats"]["docs"] == 1
